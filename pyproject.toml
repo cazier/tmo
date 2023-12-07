@@ -14,6 +14,8 @@ pydantic = "^2.5.2"
 uvicorn = "^0.24.0.post1"
 sqlmodel = "^0.0.14"
 fastapi = "^0.104.1"
+psycopg = "^3.1.14"
+typer = "^0.9.0"
 
 
 
@@ -38,16 +40,28 @@ openpyxl = "^3.1.2"
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
+[tool.ruff]
+line-length = 120
+
 [tool.black]
 line-length = 120
 
 [tool.isort]
 line_length = 120
 
+[tool.mypy]
+explicit_package_bases = true
+
+[tool.pylint.'BASIC']
+good-names = [
+    "_Subscriber_Bill_Link",
+    "_Charges_Statistics_Link",
+]
+
 [tool.pylint.'FORMAT']
 max-line-length = 120
 disable = [
     "missing-class-docstring",
     "missing-module-docstring",
-    "missing-function-docstring"
+    "missing-function-docstring",
 ]
