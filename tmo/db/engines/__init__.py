@@ -26,6 +26,7 @@ if database.get("echo"):
     logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
 
 # This just exists to prevent linters from removing unused imports
-models = (Bill, Charges, Statistics, Subscriber, _Charges_Statistics_Link, _Subscriber_Bill_Link)
+# pylint: disable-next=pointless-statement
+(Bill, Charges, Statistics, Subscriber, _Charges_Statistics_Link, _Subscriber_Bill_Link)
 
 SQLModel.metadata.create_all(engine)
