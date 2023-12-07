@@ -1,0 +1,21 @@
+{
+    "sqltools.useNodeRuntime": true,
+    "sqltools.connections": [
+        {
+            "name": "SQLModel",
+            "driver": "SQLite",
+            "database": "./db.sqlite3"
+        }
+    ],
+    "files.exclude": {
+        "**/.git": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "**/__pycache__": true,
+        "**/.mypy_cache": true,
+        "**/.ruff_cache": true,
+
+        "node_modules": true,
+        "package*.json": true
+    }
+}

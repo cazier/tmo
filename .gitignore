@@ -1,0 +1,10 @@
+*.sqlite3
+bills.json
+bills/
+**/__pycache__
+config.toml
+
+# Eventually remove these
+node_modules/
+package-lock.json
+package.json

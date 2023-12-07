@@ -1,0 +1,8 @@
+[database]
+dialect = "sqlite"
+path = "db.sqlite3"
+echo = true
+
+[load.names]
+default = "Smith"
+Adam = "Jones"
