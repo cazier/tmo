@@ -3,6 +3,7 @@ import logging
 from sqlmodel import SQLModel
 
 from tmo.config import database
+from tmo.db.highlight import LOGGER_NAME, SqlHandler
 from tmo.db.models import Bill, Charges, Statistics, Subscriber, _Charges_Statistics_Link, _Subscriber_Bill_Link
 
 from ._postgres import init as _init_postgres
@@ -24,6 +25,7 @@ match database.pop("dialect"):
 
 if database.get("echo"):
     logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
+    logging.getLogger(LOGGER_NAME).addHandler(SqlHandler())
 
 # This just exists to prevent linters from removing unused imports
 # pylint: disable-next=pointless-statement

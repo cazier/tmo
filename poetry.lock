@@ -1375,6 +1375,43 @@ doc = ["cairosvg (>=2.5.2,<3.0.0)", "mdx-include (>=1.4.1,<2.0.0)", "mkdocs (>=1
 test = ["black (>=22.3.0,<23.0.0)", "coverage (>=6.2,<7.0)", "isort (>=5.0.6,<6.0.0)", "mypy (==0.910)", "pytest (>=4.4.0,<8.0.0)", "pytest-cov (>=2.10.0,<5.0.0)", "pytest-sugar (>=0.9.4,<0.10.0)", "pytest-xdist (>=1.32.0,<4.0.0)", "rich (>=10.11.0,<14.0.0)", "shellingham (>=1.3.0,<2.0.0)"]
 
 [[package]]
+name = "types-docutils"
+version = "0.20.0.3"
+description = "Typing stubs for docutils"
+optional = false
+python-versions = "*"
+files = [
+    {file = "types-docutils-0.20.0.3.tar.gz", hash = "sha256:4928e790f42b99d5833990f99c8dd9fa9f16825f6ed30380ca981846d36870cd"},
+    {file = "types_docutils-0.20.0.3-py3-none-any.whl", hash = "sha256:a930150d8e01a9170f9bca489f46808ddebccdd8bc1e47c07968a77e49fb9321"},
+]
+
+[[package]]
+name = "types-pygments"
+version = "2.17.0.0"
+description = "Typing stubs for Pygments"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "types-Pygments-2.17.0.0.tar.gz", hash = "sha256:4241c5f1b7448e559cd820143a564cf10de626a95ab10e2daa463449d16864e7"},
+    {file = "types_Pygments-2.17.0.0-py3-none-any.whl", hash = "sha256:83c33c89037f433fd5315b1abf80f5cb8b589b2d0549444d7f63824c628142c7"},
+]
+
+[package.dependencies]
+types-docutils = "*"
+types-setuptools = "*"
+
+[[package]]
+name = "types-setuptools"
+version = "69.0.0.0"
+description = "Typing stubs for setuptools"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "types-setuptools-69.0.0.0.tar.gz", hash = "sha256:b0a06219f628c6527b2f8ce770a4f47550e00d3e8c3ad83e2dc31bc6e6eda95d"},
+    {file = "types_setuptools-69.0.0.0-py3-none-any.whl", hash = "sha256:8c86195bae2ad81e6dea900a570fe9d64a59dbce2b11cc63c046b03246ea77bf"},
+]
+
+[[package]]
 name = "typing-extensions"
 version = "4.8.0"
 description = "Backported and Experimental Type Hints for Python 3.8+"
@@ -1604,4 +1641,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "21237eef114163afbb5462736bb37e77262829ba682c58702fd63700d3574cbf"
+content-hash = "5091c428af48899bc981c87f82a58204ae83bb0ac45d54d0e6499195028aeff2"
