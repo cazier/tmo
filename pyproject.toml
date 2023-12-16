@@ -4,7 +4,9 @@ version = "0.1.0"
 description = ""
 authors = ["Brendan Cazier <520246+cazier@users.noreply.github.com>"]
 packages = [ { include = "tmo" } ]
-#readme = "README.md"
+
+[tool.poetry.scripts]
+tmo = "tmo.main:app"
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -16,8 +18,6 @@ sqlmodel = "^0.0.14"
 fastapi = "^0.104.1"
 psycopg = "^3.1.14"
 typer = "^0.9.0"
-
-
 
 [tool.poetry.group.dev.dependencies]
 ipython = "^8.18.1"
@@ -31,7 +31,6 @@ ruff = "^0.1.7"
 nest-asyncio = "^1.5.8"
 watchfiles = "^0.21.0"
 pre-commit = "^3.5.0"
-
 
 [tool.poetry.group.load.dependencies]
 openpyxl = "^3.1.2"
@@ -52,13 +51,13 @@ line_length = 120
 [tool.mypy]
 explicit_package_bases = true
 
-[tool.pylint.'BASIC']
+[tool.pylint."BASIC"]
 good-names = [
     "_Subscriber_Bill_Link",
     "_Charges_Statistics_Link",
 ]
 
-[tool.pylint.'FORMAT']
+[tool.pylint."FORMAT"]
 max-line-length = 120
 disable = [
     "missing-class-docstring",
