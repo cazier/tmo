@@ -28,19 +28,15 @@ def import_from_json(path: Annotated[pathlib.Path, typer.Option(help="path to js
 @app.command()
 def playground() -> None:
     # pylint: disable=unused-import,unused-variable,too-many-locals
-    import logging
+    from unittest.mock import patch
 
     import IPython
-    from sqlmodel import Session, SQLModel, create_engine, func, select
+    from sqlmodel import Session, func, select
 
-    from tmo.db.highlight import LOGGER_NAME, SqlHandler
-    from tmo.db.models import Bill, Charges, Statistics, Subscriber, _Charges_Statistics_Link, _Subscriber_Bill_Link
+    from tmo.config import database
 
-    engine = create_engine("sqlite://", echo=True)
-
-    logging.getLogger(LOGGER_NAME).addHandler(SqlHandler())
-
-    SQLModel.metadata.create_all(engine)
+    with patch.dict(database, {"dialect": "sqlite", "memory": True, "echo": True}, clear=True):
+        from tmo.db.engines import engine
 
     with Session(engine) as session:
         IPython.embed(display_banner=False)  # type: ignore[no-untyped-call]

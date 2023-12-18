@@ -17,6 +17,9 @@ class SqlHandler(logging.StreamHandler[typing.TextIO]):  # pylint: disable=too-f
 
         self.__logger = logging.getLogger(LOGGER_NAME)
 
+        if self.__logger.propagate:
+            self.__logger.propagate = False
+
         if self.__logger.handlers:
             self.__logger.handlers.clear()
 
