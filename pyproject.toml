@@ -50,11 +50,16 @@ line-length = 120
 
 [tool.isort]
 line_length = 120
+profile = "black"
 
 [tool.mypy]
 explicit_package_bases = true
 
 [tool.pylint."BASIC"]
+allowed-redefined-builtins = [
+    "id",
+]
+
 good-names = [
     "_Base_Model",
     "_Subscriber_Bill_Link",
