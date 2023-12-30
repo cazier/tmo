@@ -10,6 +10,13 @@ from pygments.lexers.sql import SqlLexer
 LOGGER_NAME = "sqlalchemy.engine.Engine"
 
 
+def db_print(values: typing.Any, **kwargs: typing.Any) -> None:
+    if not isinstance(values, str):
+        values = str(values)
+
+    print(highlight(values, SqlLexer(), Terminal256Formatter()), **kwargs)
+
+
 class SqlHandler(logging.StreamHandler[typing.TextIO]):  # pylint: disable=too-few-public-methods
     def __init__(self, stream: None | typing.TextIO = None) -> None:
         if not stream:
@@ -34,4 +41,4 @@ class SqlHandler(logging.StreamHandler[typing.TextIO]):  # pylint: disable=too-f
                 rich.print(record.args[-1])
                 return
 
-        print(highlight(record.msg, SqlLexer(), Terminal256Formatter()), end="")
+        db_print(record.msg, end="")
