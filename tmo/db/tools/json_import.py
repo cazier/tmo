@@ -7,10 +7,10 @@ from sqlmodel import Session
 
 from tmo.config import load
 from tmo.db.engines import engine
-from tmo.db.models import Bill, Charges, Statistics, Subscriber
+from tmo.db.models import Bill, Charge, Detail, Subscriber
 
 
-class _Import(typing.TypedDict):
+class _SubscriberImport(typing.TypedDict):
     name: str
     num: str
 
@@ -22,6 +22,11 @@ class _Import(typing.TypedDict):
     line: float
     insurance: float
     usage: float
+
+
+class _Import(typing.TypedDict):
+    subscribers: _SubscriberImport
+    other: dict[str, float]
 
 
 _bill_cache: dict[datetime.date, Bill] = {}
@@ -39,44 +44,39 @@ class _NameMap:  # pylint: disable=too-few-public-methods
 _name_map = _NameMap(load["names"])
 
 
-def _load(path: pathlib.Path) -> dict[str, list[_Import]]:
-    return typing.cast(dict[str, list[_Import]], json.loads(path.read_text(encoding="utf-8")))
+def _load(path: pathlib.Path) -> dict[str, _Import]:
+    return typing.cast(dict[str, _Import], json.loads(path.read_text(encoding="utf-8")))
 
 
-def _fill(session: Session, date: str | datetime.date, data: list[_Import]) -> None:
+def _fill(session: Session, date: str | datetime.date, data: _Import) -> None:
     if isinstance(date, str):
         date = datetime.date(*map(int, date.split(".")))
 
     bill = _bill_cache.setdefault(date, Bill(date=date))
 
-    for _data in data:
+    for kind, total in data["other"].items():
+        charge = Charge(name=kind, total=total, bill=bill)
+        session.add(charge)
+
+    for _data in data["subscribers"]:
         surname = _name_map[_data["name"]]
         name = _data["name"] + " " + surname
         user = _user_cache.setdefault(_data["num"], Subscriber(name=name, number=_data["num"]))
         user.bills.append(bill)
 
-        charges = Charges(
+        detail = Detail(
             bill=bill,
             subscriber=user,
             phone=_data["phone"],
             line=_data["line"],
             insurance=_data["insurance"],
             usage=_data["usage"],
-        )
-
-        stats = Statistics(
-            bill=bill,
-            subscriber=user,
             minutes=_data["minutes"],
             messages=_data["messages"],
             data=_data["data"],
-            charges=charges,
         )
 
-        charges.statistics = stats
-
-        session.add(stats)
-        session.add(charges)
+        session.add(detail)
 
     session.add(bill)
     session.add(user)

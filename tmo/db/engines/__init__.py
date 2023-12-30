@@ -4,7 +4,7 @@ from sqlmodel import SQLModel
 
 from tmo.config import database
 from tmo.db.highlight import LOGGER_NAME, SqlHandler
-from tmo.db.models import Bill, Charges, Statistics, Subscriber, _Charges_Statistics_Link, _Subscriber_Bill_Link
+from tmo.db.models import Bill, Detail, Subscriber, _Subscriber_Bill_Link
 
 from ._postgres import init as _init_postgres
 from ._sqlite import init as _init_sqlite
@@ -29,6 +29,6 @@ if database.get("echo"):
 
 # This just exists to prevent linters from removing unused imports
 # pylint: disable-next=pointless-statement
-(Bill, Charges, Statistics, Subscriber, _Charges_Statistics_Link, _Subscriber_Bill_Link)
+(Bill, Detail, Subscriber, _Subscriber_Bill_Link)
 
 SQLModel.metadata.create_all(engine)
