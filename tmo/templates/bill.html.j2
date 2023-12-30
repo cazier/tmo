@@ -1,0 +1,43 @@
+{% extends "base.html.j2" %}
+
+{% block title %}{{ domain }}{% endblock title %}
+
+{% block body %}
+<section class="section">
+    <div class="container">
+        <h1 class="title" id="date"></h1>
+    </div>
+    <div class="container">
+        <table class="table is-hoverable is-narrow">
+            <thead>
+                <tr>
+                    <th></th>
+                    {% for subscriber in bill.subscribers %}
+                    <th class="has-text-weight-bold" style="border-width: 0;">{{ subscriber.number }}</th>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <th></th>
+                    {% for subscriber in bill.subscribers %}
+                    <th class="has-text-weight-medium">{{ subscriber.name }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+        </table>
+    </div>
+</section>
+{% endblock body %}
+
+{% block footer %}
+<script>
+    $(
+        function () {
+            $("#date").text(
+                [
+                    new Intl.DateTimeFormat("en-US", { month: "long" }).format(new Date("{{ date.isoformat() }}")),
+                    "{{ date.year }}"
+                ].join(" "))
+        }
+    );
+</script>
+{% endblock footer %}

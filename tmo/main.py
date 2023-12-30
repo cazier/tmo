@@ -15,7 +15,9 @@ def serve(
     port: Annotated[int, typer.Option(help="Socket port")] = 8000,
     reload: bool = typer.Option(default=False, help="enable auto-reload"),
 ) -> None:
-    uvicorn.run("tmo.db.api:app", host=host, port=port, reload=reload, reload_includes=["*.j2"] if reload else None)
+    uvicorn.run(
+        "tmo.web:app", host=host, port=port, reload=reload, reload_includes=["*.j2", "config.toml"] if reload else None
+    )
 
 
 @app.command("import")

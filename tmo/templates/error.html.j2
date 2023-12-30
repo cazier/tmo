@@ -1,0 +1,14 @@
+{% extends "base.html.j2" %}
+
+{% block title %}{{ domain }}: {{ status.name | replace("_", " ") | capitalize }}{% endblock title %}
+
+{% block body %}
+<section class="section">
+    <div class="container">
+        <h1 class="title">Uh oh! An error occurred.</h1>
+        <p class="subtitle">
+            <span class="has-text-weight-semibold">{{ status.value }}</span>: {{ status.description }}
+        </p>
+    </div>
+</section>
+{% endblock body %}
