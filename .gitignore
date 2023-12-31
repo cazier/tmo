@@ -4,6 +4,8 @@ bills/
 **/__pycache__
 config.toml
 
+tmo/frontend/static/*
+!tmo/frontend/static/icon.svg
 # Eventually remove these
 node_modules/
 package-lock.json
