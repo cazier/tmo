@@ -1,14 +1,47 @@
 import datetime
 import decimal
 import functools
+import itertools
 import typing
 
+from pydantic import PlainSerializer, computed_field
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlmodel import Field, Relationship, SQLModel
 
+_M = typing.TypeVar("_M", bound=SQLModel)
+_K = typing.TypedDict("_K", section=str, name=str, order=int)
 
-def with_pretty(name: str) -> dict[str, dict[str, dict[str, str]]]:
-    return {"schema_extra": {"json_schema_extra": {"pretty": name}}}
+
+def _renders(
+    section: str,
+    order: int,
+    name: str = "",
+    computed: bool = False,
+    formatter: typing.Optional[typing.Callable[[typing.Any], typing.Any]] = None,
+    **kwargs: typing.Any,
+) -> dict[str, dict[str, dict[str, typing.Any]]]:
+    if name != "":
+        kwargs.update(name=name)
+
+    if formatter is None:
+        _F = typing.TypeVar("_F")
+
+        def formatter(value: _F) -> _F:
+            return value
+
+    kwargs.update(section=section, order=order)  # , formatter=formatter)
+
+    kwargs = {"json_schema_extra": kwargs}
+
+    if computed:
+        return kwargs
+
+    return {"schema_extra": kwargs}
+
+
+JsonDecimal = typing.Annotated[
+    decimal.Decimal, PlainSerializer(float, return_type=float, when_used="json")
+]
 
 
 class _Subscriber_Bill_Link(SQLModel, table=True):
@@ -21,8 +54,8 @@ class _Base_Model(SQLModel):
 
 
 class _SubscriberBase(SQLModel):
-    name: str
     number: str = Field(unique=True, max_length=20)
+    name: str = Field(**_renders(section="header", order=1, formatter=lambda k: k.split(" ")[0]))
 
 
 class Subscriber(_SubscriberBase, _Base_Model, table=True):
@@ -51,16 +84,21 @@ class BillRead(_BillBase):
 
 
 class _DetailBase(SQLModel):
-    line: decimal.Decimal = Field(default=0, max_digits=8, decimal_places=2, **with_pretty("Line Cost"))
-    phone: decimal.Decimal = Field(default=0, max_digits=8, decimal_places=2, **with_pretty("Phone Cost"))
-    usage: decimal.Decimal = Field(default=0, max_digits=8, decimal_places=2, **with_pretty("Usage Charges"))
-    insurance: decimal.Decimal = Field(default=0, max_digits=8, decimal_places=2, **with_pretty("Insurance"))
+    _decimals = {"default": 0, "max_digits": 8, "decimal_places": 2}
 
-    total: typing.ClassVar[decimal.Decimal] = hybrid_property(lambda k: sum([k.phone, k.line, k.insurance, k.usage]))
+    phone: JsonDecimal = Field(**_decimals, **_renders("charges", order=1, name="Phone Cost"))
+    line: JsonDecimal = Field(**_decimals, **_renders("charges", order=2, name="Line Cost"))
+    insurance: JsonDecimal = Field(**_decimals, **_renders("charges", order=3, name="Insurance"))
+    usage: JsonDecimal = Field(**_decimals, **_renders("charges", order=4, name="Usage Charges"))
 
-    minutes: int = Field(default=0, **with_pretty("Minutes (min)"))
-    messages: int = Field(default=0, **with_pretty("Messages (#)"))
-    data: decimal.Decimal = Field(default=0, max_digits=5, decimal_places=2, **with_pretty("Data (GB)"))
+    @computed_field(**_renders("summary", order=1, name="Total Charges", computed=True))
+    @property
+    def total(self) -> float:
+        return float(sum([self.phone, self.line, self.insurance, self.usage]))
+
+    minutes: int = Field(default=0, **_renders("usage", order=1, name="Minutes (min)"))
+    messages: int = Field(default=0, **_renders("usage", order=2, name="Messages (#)"))
+    data: JsonDecimal = Field(**_decimals, **_renders("usage", order=3, name="Data (GB)"))
 
 
 class Detail(_DetailBase, _Base_Model, table=True):
@@ -74,7 +112,7 @@ class Detail(_DetailBase, _Base_Model, table=True):
 class _ChargeBase(SQLModel):
     name: str
 
-    total: decimal.Decimal = Field(default=0, max_digits=4, decimal_places=2)
+    total: JsonDecimal = Field(default=0, max_digits=4, decimal_places=2)
 
 
 class Charge(_ChargeBase, _Base_Model, table=True):
@@ -108,11 +146,20 @@ class MonthValidator(SQLModel):
     class MVSubscriber(_SubscriberBase, _DetailBase, SQLModel):
         pass
 
+    sections: typing.ClassVar[tuple[str, ...]] = ("header", "charges", "usage", "summary")
+
     id: int
     date: datetime.date
 
     charges: list[ChargeRead] = []
+
     subscribers: list[MVSubscriber]
+    previous: list[MVSubscriber] = []
+
+    @computed_field
+    @property
+    def total(self) -> float:
+        return sum(field.total for field in self.subscribers + self.charges)
 
     @staticmethod
     def stuff_data(data: list[tuple[Bill, Subscriber, Detail]]) -> dict[str, typing.Any]:
@@ -131,16 +178,31 @@ class MonthValidator(SQLModel):
         }
 
 
-_M = typing.TypeVar("_M", bound=SQLModel)
-
-
-@functools.cache
-def keys(*models: _M) -> dict[str, str]:
+@functools.lru_cache(typed=True)
+def keys(*models: _M) -> dict[str, _K]:
     if not models:
-        models = (Detail, Subscriber)
+        models = (_DetailBase, _SubscriberBase)
 
     return {
-        key: (value.json_schema_extra or {}).get("pretty", key)
-        for model in models
-        for key, value in model.model_fields.items()
+        key: {
+            "section": field["section"],
+            "formatter": field["formatter"],
+            "name": field.get("name", key),
+        }
+        for model in map(lambda m: m.model_construct(), models)
+        for key, field in sorted(
+            (
+                (name, _field.json_schema_extra)
+                for name, _field in itertools.chain(
+                    model.model_fields.items(),
+                    model.model_computed_fields.items(),
+                )
+                if _field.json_schema_extra is not None
+            ),
+            # key=_sort,
+            key=lambda k: (
+                k[1]["section"],
+                k[1]["order"],
+            ),
+        )
     }

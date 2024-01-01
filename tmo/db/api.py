@@ -1,5 +1,5 @@
 import datetime
-from typing import Any, Generator, Sequence, cast
+from typing import Any, Generator, Optional, Sequence, cast
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
@@ -55,28 +55,6 @@ async def get_details(*, session: Session = Depends(_session)) -> DatabaseDetail
     ).first()
 
 
-# @api.get("/month/{id}", responses=_additional_responses)
-# def get_month(*, id: int, session: Session = Depends(_session)) -> Month:
-#     month = session.get(Bill, id)
-#     if month is None:
-#         raise HTTPException(status_code=404, detail="Month could not be found")
-
-#     data = session.exec(
-#         select(Subscriber, Detail)
-#         .select_from(Bill)
-#         .join(_Subscriber_Bill_Link, Bill.id == _Subscriber_Bill_Link.bill_id)
-#         .join(Subscriber, _Subscriber_Bill_Link.subscriber_id == Subscriber.id)
-#         .join(Detail, and_(Subscriber.id == Detail.subscriber_id, Bill.id == Detail.bill_id), isouter=True)
-#         .where(Bill.id == id),
-#     ).all()
-
-#     return Month(
-#         id=month.id,
-#         date=month.date,
-#         subscribers=[SubscriberBill(subscriber=subscriber, detail=detail) for subscriber, detail in data],
-#     )
-
-
 @router.get("/bills")
 async def get_bills(
     *, start: int = 0, count: int = Query(default=100, let=100), session: Session = Depends(_session)
@@ -121,33 +99,58 @@ async def get_subscriber_charge(
     return subscriber
 
 
+# @router.get("/month/current", responses=_additional_responses)
+# @router.get("/month/{year}/{month}", responses=_additional_responses)
+# @router.get("/month/{id}", responses=_additional_responses)
+# async def get_bill(
+#     *,
+#     year: Optional[int] = None,
+#     month: Optional[int] = None,
+#     id: Optional[int] = None,
+#     session: Session = Depends(_session)
+# ) -> MonthValidator:
+
+
 @router.get("/month/current", responses=_additional_responses)
-async def get_bill_by_current(*, session: Session = Depends(_session)) -> MonthValidator:
-    today = datetime.datetime.today()
-    today = datetime.datetime(2023, 5, 4)
-    return await get_bill_by_date(year=today.year, month=today.month, session=session)
+async def get_bill_by_current(*, render: bool = False, session: Session = Depends(_session)) -> MonthValidator:
+    return await _get_bill(session=session, render=render, id=None, year=None, month=None)
 
 
 @router.get("/month/{year}/{month}", responses=_additional_responses)
-async def get_bill_by_date(*, year: int, month: int, session: Session = Depends(_session)) -> MonthValidator:
-    # pylint: disable=not-callable
-    id = session.exec(
-        select(Bill.id).where(
-            and_(
-                func.extract("year", Bill.date) == year,
-                func.extract("month", Bill.date) == month,
-            )
-        )
-    ).first()
-
-    if id is None:
-        raise HTTPException(status_code=404, detail="No month data could be found")
-
-    return await get_bill_by_id(id=id, session=session)
+async def get_bill_by_date(
+    *, year: int, month: int, render: bool = False, session: Session = Depends(_session)
+) -> MonthValidator:
+    return await _get_bill(year=year, month=month, session=session, render=render, id=None)
 
 
 @router.get("/month/{id}", responses=_additional_responses)
-async def get_bill_by_id(*, id: int, session: Session = Depends(_session)) -> MonthValidator:
+async def get_bill_by_id(*, id: int, render: bool = False, session: Session = Depends(_session)) -> MonthValidator:
+    return await _get_bill(id=id, session=session, render=render, year=None, month=None)
+
+
+async def _get_bill(
+    session: Session, render: bool, year: Optional[int], month: Optional[int], id: Optional[int]
+) -> MonthValidator:
+    if id is None and month is None and year is None:
+        today = datetime.datetime.today()
+
+        year = today.year
+        month = today.month
+
+    if year and month:
+        id = session.exec(
+            select(Bill.id).where(
+                and_(
+                    # pylint: disable=not-callable
+                    func.extract("year", Bill.date) == year,
+                    func.extract("month", Bill.date) == month,
+                )
+            )
+        ).first()
+
+        if id is None:
+            raise HTTPException(status_code=404, detail="No month data could be found")
+
     data = cast(
         TupleResult[tuple[Bill, Subscriber, Detail]],
         session.exec(
