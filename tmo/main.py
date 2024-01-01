@@ -1,5 +1,5 @@
 import pathlib
-from typing import Annotated
+from typing import Annotated, Optional
 
 import typer
 import uvicorn
@@ -28,7 +28,7 @@ def import_from_json(path: Annotated[pathlib.Path, typer.Option(help="path to js
 
 
 @app.command()
-def playground() -> None:
+def playground(db: Annotated[Optional[pathlib.Path], typer.Option(help="Path to a sqlite database")] = None) -> None:
     # pylint: disable=unused-import,unused-variable,too-many-locals
     from unittest.mock import patch
 
@@ -36,8 +36,18 @@ def playground() -> None:
     from sqlmodel import Session, func, select
 
     from tmo.config import database
+    from tmo.db.highlight import db_print
+    from tmo.db.models import Bill, Charge, Detail, MonthValidator, Subscriber
 
-    with patch.dict(database, {"dialect": "sqlite", "memory": True, "echo": True}, clear=True):
+    updates: dict[str, str | bool]
+
+    if db is not None:
+        updates = {"path": str(db.resolve().relative_to(pathlib.Path.cwd()))}
+
+    else:
+        updates = {"memory": True}
+
+    with patch.dict(database, {"dialect": "sqlite", "echo": True, **updates}, clear=True):
         from tmo.db.engines import engine
 
     with Session(engine) as session:
