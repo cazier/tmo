@@ -7,28 +7,113 @@
     <div class="container">
         <h1 class="title" id="date"></h1>
     </div>
-    <div class="container">
-        <table class="table is-hoverable is-narrow">
-            <thead>
+    <br>
+    <div class="table-container container">
+        <table class="table is-bordered is-hoverable" style="white-space: nowrap;">
+            <thead class="bill-header">
+                {% for values in table.header.values() %}
                 <tr>
                     <th></th>
-                    {% for subscriber in bill.subscribers %}
-                    <th class="has-text-weight-bold" style="border-width: 0;">{{ subscriber.number }}</th>
+                    {% for subscriber in values %}
+                    <th class="has-text-weight-semibold" colspan="2">{{ subscriber }}</th>
                     {% endfor %}
                 </tr>
-                <tr>
-                    <th></th>
-                    {% for subscriber in bill.subscribers %}
-                    <th class="has-text-weight-medium">{{ subscriber.name }}</th>
-                    {% endfor %}
-                </tr>
+                {% endfor %}
             </thead>
+            <tbody>
+                {% for key, values in table.charges.items() %}
+                <tr>
+                    <th>{{ key }}</th>
+                    {% for value in values %}
+                    <td class="currency-symbol">
+                        <span>$</span>
+                    </td>
+                    <td class="currency-value {{ value | currency_class }}">
+                        <span>{{ "{0:.2f}".format(value) if value != 0 else "—" }}</span>
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+                <tr class="blank-row"></tr>
+                {% for key, values in table.usage.items() %}
+                <tr>
+                    <th>{{ key }}</th>
+                    {% for value in values %}
+                    <td class="usage" colspan="2">
+                        <span>{{ value }}</span>
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+                <tr class="blank-row"></tr>
+                {% for key, values in table.summary.items() %}
+                <tr>
+                    <th>{{ key }}</th>
+                    {% for value in values %}
+                    <td class="currency-symbol">
+                        <span>$</span>
+                    </td>
+                    <td class="currency-value {{ value | currency_class }}">
+                        <span>{{ "{0:.2f}".format(value) if value != 0 else "—" }}</span>
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+                {% for values in last.values() %}
+                <tr>
+                    <th>(Last Month)</th>
+                    {% for value in values %}
+                    <td class="currency-symbol">
+                        <span>$</span>
+                    </td>
+                    <td class="currency-value {{ value | currency_class }}">
+                        <span>{{ "{0:.2f}".format(value) if value != 0 else "—" }}</span>
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
         </table>
     </div>
 </section>
 {% endblock body %}
 
 {% block footer %}
+<style>
+    thead.bill-header>tr>th,
+    td.usage {
+        text-align: center !important;
+    }
+
+    td.currency-symbol {
+        border-right: none;
+    }
+
+    td.currency-value {
+        text-align: right !important;
+        border-left: none !important;
+    }
+
+    td.currency-value.is-currency-negative>span {
+        color: var(--cornell-red);
+    }
+
+    td.currency-value.is-currency-negative>span::before {
+        content: "(";
+    }
+
+    td.currency-value.is-currency-negative>span::after {
+        content: ")";
+    }
+
+    /* td.currency-value.is-currency-zero > span  {
+        text-align: center !important;
+    } */
+
+    tr.blank-row {
+        height: 15px;
+    }
+</style>
 <script>
     $(
         function () {
@@ -39,5 +124,29 @@
                 ].join(" "))
         }
     );
+
+    // document.addEventListener('copy', function (e) {
+    //   var selectedText = window.getSelection().toString();
+
+    //   // Replace empty values with "0" before copying
+    //   var modifiedText = selectedText.replace(/(\n|^)$|^\s*$/g, '0');
+
+    //   // Create a temporary textarea to store the modified text
+    //   var tempTextarea = document.createElement('textarea');
+    //   tempTextarea.value = modifiedText;
+
+    //   // Append the textarea to the document
+    //   document.body.appendChild(tempTextarea);
+
+    //   // Copy the modified text from the textarea
+    //   tempTextarea.select();
+    //   document.execCommand('copy');
+
+    //   // Remove the temporary textarea
+    //   document.body.removeChild(tempTextarea);
+
+    //   // Prevent the default copy behavior
+    //   e.preventDefault();
+    // });
 </script>
 {% endblock footer %}

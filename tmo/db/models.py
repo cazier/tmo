@@ -9,7 +9,9 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlmodel import Field, Relationship, SQLModel
 
 _M = typing.TypeVar("_M", bound=SQLModel)
-_K = typing.TypedDict("_K", section=str, name=str, order=int)
+_K = typing.TypedDict(
+    "_K", {"section": str, "name": str, "order": int, "formatter": typing.Callable[[typing.Any], typing.Any]}
+)
 
 
 def _renders(
@@ -29,7 +31,7 @@ def _renders(
         def formatter(value: _F) -> _F:
             return value
 
-    kwargs.update(section=section, order=order)  # , formatter=formatter)
+    kwargs.update(section=section, order=order, formatter=formatter)
 
     kwargs = {"json_schema_extra": kwargs}
 
@@ -39,9 +41,7 @@ def _renders(
     return {"schema_extra": kwargs}
 
 
-JsonDecimal = typing.Annotated[
-    decimal.Decimal, PlainSerializer(float, return_type=float, when_used="json")
-]
+JsonDecimal = typing.Annotated[decimal.Decimal, PlainSerializer(float, return_type=float, when_used="json")]
 
 
 class _Subscriber_Bill_Link(SQLModel, table=True):
@@ -199,7 +199,6 @@ def keys(*models: _M) -> dict[str, _K]:
                 )
                 if _field.json_schema_extra is not None
             ),
-            # key=_sort,
             key=lambda k: (
                 k[1]["section"],
                 k[1]["order"],
