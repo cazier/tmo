@@ -6,15 +6,18 @@ import rich
 from pygments import highlight
 from pygments.formatters.terminal256 import Terminal256Formatter
 from pygments.lexers.sql import SqlLexer
+from sqlfmt.api import Mode, format_string
 
 LOGGER_NAME = "sqlalchemy.engine.Engine"
+
+_mode = Mode(fast=True, no_color=True, no_progressbar=True)
 
 
 def db_print(values: typing.Any, **kwargs: typing.Any) -> None:
     if not isinstance(values, str):
         values = str(values)
 
-    print(highlight(values, SqlLexer(), Terminal256Formatter()), **kwargs)
+    print(highlight(format_string(values, mode=_mode), SqlLexer(), Terminal256Formatter()), **kwargs)
 
 
 class SqlHandler(logging.StreamHandler[typing.TextIO]):  # pylint: disable=too-few-public-methods

@@ -1200,6 +1200,27 @@ testing = ["build[virtualenv]", "filelock (>=3.4.0)", "flake8-2020", "ini2toml[l
 testing-integration = ["build[virtualenv] (>=1.0.3)", "filelock (>=3.4.0)", "jaraco.envs (>=2.2)", "jaraco.path (>=3.2.0)", "packaging (>=23.1)", "pytest", "pytest-enabler", "pytest-xdist", "tomli", "virtualenv (>=13.0.0)", "wheel"]
 
 [[package]]
+name = "shandy-sqlfmt"
+version = "0.21.1"
+description = "sqlfmt formats your dbt SQL files so you don't have to."
+optional = false
+python-versions = ">=3.8,<4.0"
+files = [
+    {file = "shandy_sqlfmt-0.21.1-py3-none-any.whl", hash = "sha256:cc1b315d5c5c26e3a67d2aa9ea201bf3204d342dc0a4b33bf449ad67dfb00e64"},
+    {file = "shandy_sqlfmt-0.21.1.tar.gz", hash = "sha256:7070712d0f7bc033e6150f8127e13107e02685c3f2015ea21cf4bcc7ef26b78a"},
+]
+
+[package.dependencies]
+click = ">=8.0,<9.0"
+jinja2 = ">=3.0,<4.0"
+platformdirs = ">=2.4,<5.0"
+tqdm = ">=4.0,<5.0"
+
+[package.extras]
+jinjafmt = ["black"]
+sqlfmt-primer = ["gitpython (>=3.1.24,<4.0.0)"]
+
+[[package]]
 name = "six"
 version = "1.16.0"
 description = "Python 2 and 3 compatibility utilities"
@@ -1394,6 +1415,26 @@ asyncmy = ["asyncmy (>=0.2.8,<0.3.0)"]
 asyncodbc = ["asyncodbc (>=0.1.1,<0.2.0)"]
 asyncpg = ["asyncpg"]
 psycopg = ["psycopg[binary,pool] (>=3.0.12,<4.0.0)"]
+
+[[package]]
+name = "tqdm"
+version = "4.66.1"
+description = "Fast, Extensible Progress Meter"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "tqdm-4.66.1-py3-none-any.whl", hash = "sha256:d302b3c5b53d47bce91fea46679d9c3c6508cf6332229aa1e7d8653723793386"},
+    {file = "tqdm-4.66.1.tar.gz", hash = "sha256:d88e651f9db8d8551a62556d3cff9e3034274ca5d66e93197cf2490e2dcb69c7"},
+]
+
+[package.dependencies]
+colorama = {version = "*", markers = "platform_system == \"Windows\""}
+
+[package.extras]
+dev = ["pytest (>=6)", "pytest-cov", "pytest-timeout", "pytest-xdist"]
+notebook = ["ipywidgets (>=6)"]
+slack = ["slack-sdk"]
+telegram = ["requests"]
 
 [[package]]
 name = "traitlets"
@@ -1698,4 +1739,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "043c0c87a4c4bb939ef8462e3d97b7c4b5c201b374b29e5013f81c9d994e600c"
+content-hash = "f5c06aed1b69ae871a0265a4490b9e1791e20be8663e89ee7f863d2d8d85a42d"
