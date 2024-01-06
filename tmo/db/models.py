@@ -1,44 +1,31 @@
+import dataclasses
 import datetime
 import decimal
-import functools
-import itertools
 import typing
 
 from pydantic import PlainSerializer, computed_field
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlmodel import Field, Relationship, SQLModel
 
-_M = typing.TypeVar("_M", bound=SQLModel)
-_K = typing.TypedDict(
-    "_K", {"section": str, "name": str, "order": int, "formatter": typing.Callable[[typing.Any], typing.Any]}
-)
+_T = typing.TypeVar("_T")
 
 
-def _renders(
-    section: str,
-    order: int,
-    name: str = "",
-    computed: bool = False,
-    formatter: typing.Optional[typing.Callable[[typing.Any], typing.Any]] = None,
-    **kwargs: typing.Any,
-) -> dict[str, dict[str, dict[str, typing.Any]]]:
-    if name != "":
-        kwargs.update(name=name)
+@dataclasses.dataclass(order=True)
+class Render:
+    @staticmethod
+    def noop(value: _T) -> _T:
+        return value
 
-    if formatter is None:
-        _F = typing.TypeVar("_F")
+    section: str
+    order: int
+    name: str = dataclasses.field(default="", compare=False)
+    formatter: typing.Callable[[_T], _T] = dataclasses.field(default=noop, compare=False)
 
-        def formatter(value: _F) -> _F:
-            return value
+    def with_name(self, fallback: str) -> "Render":
+        if self.name == "":
+            self.name = fallback
 
-    kwargs.update(section=section, order=order, formatter=formatter)
-
-    kwargs = {"json_schema_extra": kwargs}
-
-    if computed:
-        return kwargs
-
-    return {"schema_extra": kwargs}
+        return self
 
 
 JsonDecimal = typing.Annotated[decimal.Decimal, PlainSerializer(float, return_type=float, when_used="json")]
@@ -55,7 +42,7 @@ class _Base_Model(SQLModel):
 
 class _SubscriberBase(SQLModel):
     number: str = Field(unique=True, max_length=20)
-    name: str = Field(**_renders(section="header", order=1, formatter=lambda k: k.split(" ")[0]))
+    name: typing.Annotated[str, Render("header", 1, formatter=lambda k: k.split(" ")[0])]
 
 
 class Subscriber(_SubscriberBase, _Base_Model, table=True):
@@ -86,19 +73,19 @@ class BillRead(_BillBase):
 class _DetailBase(SQLModel):
     _decimals = {"default": 0, "max_digits": 8, "decimal_places": 2}
 
-    phone: JsonDecimal = Field(**_decimals, **_renders("charges", order=1, name="Phone Cost"))
-    line: JsonDecimal = Field(**_decimals, **_renders("charges", order=2, name="Line Cost"))
-    insurance: JsonDecimal = Field(**_decimals, **_renders("charges", order=3, name="Insurance"))
-    usage: JsonDecimal = Field(**_decimals, **_renders("charges", order=4, name="Usage Charges"))
+    phone: typing.Annotated[JsonDecimal, Render("changes", 1, name="Phone Cost")] = Field(**_decimals)
+    line: typing.Annotated[JsonDecimal, Render("charges", 2, name="Line Cost")] = Field(**_decimals)
+    insurance: typing.Annotated[JsonDecimal, Render("charges", 3, name="Insurance")] = Field(**_decimals)
+    usage: typing.Annotated[JsonDecimal, Render("charges", 4, name="Usage Charges")] = Field(**_decimals)
 
-    @computed_field(**_renders("summary", order=1, name="Total Charges", computed=True))
+    @computed_field
     @property
-    def total(self) -> float:
+    def total(self) -> typing.Annotated[float, Render("summary", 1, name="Total Charges")]:
         return float(sum([self.phone, self.line, self.insurance, self.usage]))
 
-    minutes: int = Field(default=0, **_renders("usage", order=1, name="Minutes (min)"))
-    messages: int = Field(default=0, **_renders("usage", order=2, name="Messages (#)"))
-    data: JsonDecimal = Field(**_decimals, **_renders("usage", order=3, name="Data (GB)"))
+    minutes: typing.Annotated[int, Render("usage", 1, name="Minutes (min)")] = Field(default=0)
+    messages: typing.Annotated[int, Render("usage", 2, name="Messages (#)")] = Field(default=0)
+    data: typing.Annotated[JsonDecimal, Render("usage", 3, name="Data (GB)")] = Field(**_decimals)
 
 
 class Detail(_DetailBase, _Base_Model, table=True):
@@ -139,7 +126,7 @@ class BillReadWithSubscribers(BillRead):
 
 
 class SubscriberReadWithDetails(SubscribersRead):
-    detail: Detail
+    detail: _DetailBase
 
 
 class MonthValidator(SQLModel):
@@ -176,32 +163,3 @@ class MonthValidator(SQLModel):
                 for (_, subscriber, detail) in data
             ],
         }
-
-
-@functools.lru_cache(typed=True)
-def keys(*models: _M) -> dict[str, _K]:
-    if not models:
-        models = (_DetailBase, _SubscriberBase)
-
-    return {
-        key: {
-            "section": field["section"],
-            "formatter": field["formatter"],
-            "name": field.get("name", key),
-        }
-        for model in map(lambda m: m.model_construct(), models)
-        for key, field in sorted(
-            (
-                (name, _field.json_schema_extra)
-                for name, _field in itertools.chain(
-                    model.model_fields.items(),
-                    model.model_computed_fields.items(),
-                )
-                if _field.json_schema_extra is not None
-            ),
-            key=lambda k: (
-                k[1]["section"],
-                k[1]["order"],
-            ),
-        )
-    }
