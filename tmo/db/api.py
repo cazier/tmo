@@ -1,9 +1,8 @@
 import datetime
-from typing import Any, Generator, Optional, Sequence, cast
+from typing import Any, Generator, Optional, Sequence
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
-from sqlalchemy.engine.result import TupleResult
 from sqlalchemy.orm import joinedload
 from sqlmodel import Session, and_, func, select
 
@@ -12,13 +11,12 @@ from tmo.db.models import (
     Bill,
     BillRead,
     BillReadWithSubscribers,
+    BillRender,
     Detail,
-    MonthValidator,
     Subscriber,
     SubscriberRead,
     SubscriberReadWithDetails,
     SubscribersRead,
-    _Subscriber_Bill_Link,
 )
 
 
@@ -112,25 +110,25 @@ async def get_subscriber_charge(
 
 
 @router.get("/month/current", responses=_additional_responses)
-async def get_bill_by_current(*, render: bool = False, session: Session = Depends(_session)) -> MonthValidator:
+async def get_bill_by_current(*, render: bool = False, session: Session = Depends(_session)) -> BillRender:
     return await _get_bill(session=session, render=render, id=None, year=None, month=None)
 
 
 @router.get("/month/{year}/{month}", responses=_additional_responses)
 async def get_bill_by_date(
     *, year: int, month: int, render: bool = False, session: Session = Depends(_session)
-) -> MonthValidator:
+) -> BillRender:
     return await _get_bill(year=year, month=month, session=session, render=render, id=None)
 
 
 @router.get("/month/{id}", responses=_additional_responses)
-async def get_bill_by_id(*, id: int, render: bool = False, session: Session = Depends(_session)) -> MonthValidator:
+async def get_bill_by_id(*, id: int, render: bool = False, session: Session = Depends(_session)) -> BillRender:
     return await _get_bill(id=id, session=session, render=render, year=None, month=None)
 
 
 async def _get_bill(
     session: Session, render: bool, year: Optional[int], month: Optional[int], id: Optional[int]
-) -> MonthValidator:
+) -> Bill:
     if id is None and month is None and year is None:
         today = datetime.datetime.today()
 
@@ -151,26 +149,20 @@ async def _get_bill(
         if id is None:
             raise HTTPException(status_code=404, detail="No month data could be found")
 
-    data = cast(
-        TupleResult[tuple[Bill, Subscriber, Detail]],
+    data = (
         session.exec(
-            select(Bill, Subscriber, Detail)
-            .options(joinedload(Bill.charges))
-            .join(_Subscriber_Bill_Link, Bill.id == _Subscriber_Bill_Link.bill_id)
-            .join(Subscriber, _Subscriber_Bill_Link.subscriber_id == Subscriber.id)
-            .join(
-                Detail,
-                and_(
-                    Subscriber.id == Detail.subscriber_id,
-                    Bill.id == Detail.bill_id,
-                ),
-                isouter=True,
+            select(Bill)
+            .options(
+                joinedload(Bill.charges),
+                joinedload(Bill.subscribers).joinedload(Subscriber.details.and_(Detail.bill_id == Bill.id)),
             )
             .where(Bill.id == id)
-        ).unique(),
-    ).all()
+        )
+        .unique()
+        .first()
+    )
 
     if data is None:
         raise HTTPException(status_code=404, detail="No month data could be found")
 
-    return MonthValidator.stuff_data(data)
+    return data

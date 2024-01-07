@@ -3,7 +3,7 @@ import datetime
 import decimal
 import typing
 
-from pydantic import PlainSerializer, computed_field
+from pydantic import PlainSerializer, computed_field, field_validator
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -126,40 +126,17 @@ class BillReadWithSubscribers(BillRead):
 
 
 class SubscriberReadWithDetails(SubscribersRead):
-    detail: _DetailBase
+    details: _DetailBase
+
+    @field_validator("details", mode="before")
+    @classmethod
+    def _flatten_details(cls, values: list[str]) -> str:
+        [value] = values
+
+        return value
 
 
-class MonthValidator(SQLModel):
-    class MVSubscriber(_SubscriberBase, _DetailBase, SQLModel):
-        pass
-
-    sections: typing.ClassVar[tuple[str, ...]] = ("header", "charges", "usage", "summary")
-
+class BillRender(_BillBase):
     id: int
-    date: datetime.date
-
-    charges: list[ChargeRead] = []
-
-    subscribers: list[MVSubscriber]
-    previous: list[MVSubscriber] = []
-
-    @computed_field
-    @property
-    def total(self) -> float:
-        return sum(field.total for field in self.subscribers + self.charges)
-
-    @staticmethod
-    def stuff_data(data: list[tuple[Bill, Subscriber, Detail]]) -> dict[str, typing.Any]:
-        [(bill, *_), *_] = data
-        return {
-            "id": bill.id,
-            "date": bill.date,
-            "charges": bill.charges,
-            "subscribers": [
-                {
-                    **subscriber.model_dump(mode="json"),
-                    **detail.model_dump(mode="json"),
-                }
-                for (_, subscriber, detail) in data
-            ],
-        }
+    charges: list[ChargeRead]
+    subscribers: list[SubscriberReadWithDetails]
