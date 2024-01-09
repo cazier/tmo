@@ -97,38 +97,22 @@ async def get_subscriber_charge(
     return subscriber
 
 
-# @router.get("/month/current", responses=_additional_responses)
-# @router.get("/month/{year}/{month}", responses=_additional_responses)
-# @router.get("/month/{id}", responses=_additional_responses)
-# async def get_bill(
-#     *,
-#     year: Optional[int] = None,
-#     month: Optional[int] = None,
-#     id: Optional[int] = None,
-#     session: Session = Depends(_session)
-# ) -> MonthValidator:
+@router.get("/render/current", responses=_additional_responses)
+async def get_bill_by_current(*, session: Session = Depends(_session)) -> Sequence[BillRender]:
+    return await _get_bill(session=session, id=None, year=None, month=None)
 
 
-@router.get("/month/current", responses=_additional_responses)
-async def get_bill_by_current(*, render: bool = False, session: Session = Depends(_session)) -> BillRender:
-    return await _get_bill(session=session, render=render, id=None, year=None, month=None)
+@router.get("/render/{year}/{month}", responses=_additional_responses)
+async def get_bill_by_date(*, year: int, month: int, session: Session = Depends(_session)) -> Sequence[BillRender]:
+    return await _get_bill(year=year, month=month, session=session, id=None)
 
 
-@router.get("/month/{year}/{month}", responses=_additional_responses)
-async def get_bill_by_date(
-    *, year: int, month: int, render: bool = False, session: Session = Depends(_session)
-) -> BillRender:
-    return await _get_bill(year=year, month=month, session=session, render=render, id=None)
+@router.get("/render/{id}", responses=_additional_responses)
+async def get_bill_by_id(*, id: int, session: Session = Depends(_session)) -> Sequence[BillRender]:
+    return await _get_bill(id=id, session=session, year=None, month=None)
 
 
-@router.get("/month/{id}", responses=_additional_responses)
-async def get_bill_by_id(*, id: int, render: bool = False, session: Session = Depends(_session)) -> BillRender:
-    return await _get_bill(id=id, session=session, render=render, year=None, month=None)
-
-
-async def _get_bill(
-    session: Session, render: bool, year: Optional[int], month: Optional[int], id: Optional[int]
-) -> Bill:
+async def _get_bill(session: Session, year: Optional[int], month: Optional[int], id: Optional[int]) -> Sequence[Bill]:
     if id is None and month is None and year is None:
         today = datetime.datetime.today()
 
@@ -136,18 +120,16 @@ async def _get_bill(
         month = today.month
 
     if year and month:
-        id = session.exec(
+        rows = session.exec(
             select(Bill.id).where(
-                and_(
-                    # pylint: disable=not-callable
-                    func.extract("year", Bill.date) == year,
-                    func.extract("month", Bill.date) == month,
-                )
+                and_(func.extract("year", Bill.date) == year, func.extract("month", Bill.date) == month),
             )
         ).first()
 
-        if id is None:
+        if not rows:
             raise HTTPException(status_code=404, detail="No month data could be found")
+
+        id = rows
 
     data = (
         session.exec(
@@ -156,13 +138,16 @@ async def _get_bill(
                 joinedload(Bill.charges),
                 joinedload(Bill.subscribers).joinedload(Subscriber.details.and_(Detail.bill_id == Bill.id)),
             )
-            .where(Bill.id == id)
+            .where(Bill.id <= id)
+            .order_by(Bill.date.desc())
+            .limit(2)
         )
         .unique()
-        .first()
+        .all()
     )
 
-    if data is None:
+    if len(data) != 2:
+        # TODO this doesn't need to be an exception, but should create a bill with no previous data
         raise HTTPException(status_code=404, detail="No month data could be found")
 
     return data
