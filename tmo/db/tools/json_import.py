@@ -75,7 +75,6 @@ def _fill(session: Session, date: str | datetime.date, data: _Import) -> None:
             messages=_data["messages"],
             data=_data["data"],
         )
-
         session.add(detail)
 
     session.add(bill)
