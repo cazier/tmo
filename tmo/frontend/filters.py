@@ -5,7 +5,8 @@ import typing
 from pydantic import fields
 from sqlmodel import SQLModel
 
-from tmo.db.models import MonthValidator, Render
+from tmo.db.models import Render
+from tmo.db.schemas import BillRender
 
 _T = typing.TypeVar("_T")
 _M = typing.TypeVar("_M", bound=SQLModel)
@@ -15,10 +16,10 @@ def table(data: list[dict[str, _T]]) -> dict[str, dict[str, list[_T]]]:
     return {
         section: {
             schema.name: [schema.formatter(subscriber[key]) for subscriber in data]
-            for key, schema in keys(MonthValidator.MVSubscriber).items()
+            for key, schema in keys(BillRender).items()
             if schema.section == section
         }
-        for section in MonthValidator.sections
+        for section in BillRender.sections
     }
 
 

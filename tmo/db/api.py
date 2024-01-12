@@ -7,13 +7,11 @@ from sqlalchemy.orm import joinedload
 from sqlmodel import Session, and_, func, select
 
 from tmo.db.engines import engine
-from tmo.db.models import (
-    Bill,
+from tmo.db.models import Bill, Detail, Subscriber
+from tmo.db.schemas import (
     BillRead,
     BillReadWithSubscribers,
     BillRender,
-    Detail,
-    Subscriber,
     SubscriberRead,
     SubscriberReadWithDetails,
     SubscribersRead,
@@ -122,6 +120,7 @@ async def _get_bill(session: Session, year: Optional[int], month: Optional[int],
     if year and month:
         rows = session.exec(
             select(Bill.id).where(
+                # pylint: disable-next=not-callable
                 and_(func.extract("year", Bill.date) == year, func.extract("month", Bill.date) == month),
             )
         ).first()
@@ -139,7 +138,7 @@ async def _get_bill(session: Session, year: Optional[int], month: Optional[int],
                 joinedload(Bill.subscribers).joinedload(Subscriber.details.and_(Detail.bill_id == Bill.id)),
             )
             .where(Bill.id <= id)
-            .order_by(Bill.date.desc())
+            .order_by(Bill.date.desc())  # pylint: disable=no-member
             .limit(2)
         )
         .unique()
