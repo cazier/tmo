@@ -59,9 +59,9 @@
                     {% endfor %}
                 </tr>
                 {% endfor %}
-                {% for values in last.values() %}
+                {% for key, values in table.recap.items() %}
                 <tr>
-                    <th>(Last Month)</th>
+                    <th>{{ key }}</th>
                     {% for value in values %}
                     <td class="currency-symbol">
                         <span>$</span>
@@ -106,9 +106,9 @@
         content: ")";
     }
 
-    /* td.currency-value.is-currency-zero > span  {
+    td.currency-value.is-currency-zero  {
         text-align: center !important;
-    } */
+    }
 
     tr.blank-row {
         height: 15px;

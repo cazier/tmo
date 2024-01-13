@@ -1,12 +1,14 @@
+import decimal
 import typing
 
 from pydantic import model_validator
 
-from tmo.db.models.models import Bill, BillScalar, ChargeScalar, DetailScalar, SubscriberScalar
+from tmo.db.models.db import Bill, BillScalar, ChargeScalar, DetailScalar, SubscriberScalar
 
 
 class BillRead(BillScalar):
     id: int
+    total: decimal.Decimal
 
 
 class ChargeRead(ChargeScalar):
@@ -17,13 +19,17 @@ class SubscribersRead(SubscriberScalar):
     id: int
 
 
+class DetailRead(DetailScalar):
+    bill_id: int
+
+
 class SubscriberRead(SubscribersRead):
     count: int
-
-    bills: list[BillRead]
+    details: list[DetailRead]
 
 
 class BillReadWithSubscribers(BillRead):
+    charges: list[ChargeRead]
     subscribers: list[SubscribersRead]
 
 
@@ -36,8 +42,10 @@ class BillRender(BillScalar):
     charges: list[ChargeRead]
     subscribers: list[SubscriberReadWithDetails]
 
-    sections: typing.ClassVar[tuple[str, ...]] = ("header", "charges", "usage", "summary")
+    sections: typing.ClassVar[tuple[str, ...]] = ("header", "charges", "usage", "summary", "recap", "shared")
 
+
+class RenderLoader(BillRender):
     @model_validator(mode="before")
     @classmethod
     def _test(cls, data: Bill):

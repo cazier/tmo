@@ -1,8 +1,9 @@
+import collections
 import functools
 import itertools
 import typing
 
-from pydantic import fields
+from pydantic import fields, validate_call
 from sqlmodel import SQLModel
 
 from tmo.db.models import Render
@@ -12,19 +13,40 @@ _T = typing.TypeVar("_T")
 _M = typing.TypeVar("_M", bound=SQLModel)
 
 
-def table(data: list[dict[str, _T]]) -> dict[str, dict[str, list[_T]]]:
-    return {
-        section: {
-            schema.name: [schema.formatter(subscriber[key]) for subscriber in data]
-            for key, schema in keys(BillRender).items()
-            if schema.section == section
-        }
-        for section in BillRender.sections
-    }
+@validate_call
+def table(data: list[BillRender]) -> dict[str, dict[str, list[typing.Any]]]:
+    present, previous = data
 
+    resp = {section: collections.defaultdict(list) for section in BillRender.sections}
 
-def previous(data: list[dict[str, _T]]) -> dict[str, list[_T]]:
-    return table(data).get("summary", {})
+    for subscriber in present.subscribers:
+        for key, schema in subscriber.fields_by_annotation(klass=Render):
+            resp[schema.section][schema.name].append(schema.formatter(getattr(subscriber, key)))
+
+        for key, schema in subscriber.details.fields_by_annotation(klass=Render):
+            resp[schema.section][schema.name].append(schema.formatter(getattr(subscriber.details, key)))
+
+            if key == "total":
+                for past_subscriber in previous.subscribers:
+                    if subscriber.id == past_subscriber.id:
+                        resp["recap"]["(Last Month)"].append(schema.formatter(getattr(past_subscriber.details, key)))
+                        break
+                else:
+                    resp["recap"]["(Last Month)"].append(schema.formatter(0))
+
+    for charge in present.charges:
+        resp["shared"][charge.name] = {"present": charge.total}
+
+        for past_charge in previous.charges:
+            if past_charge.name == charge.name:
+                amount = past_charge.total
+                break
+        else:
+            amount = 0
+
+        resp["shared"][charge.name]["past"] = amount
+
+    return resp
 
 
 def currency_class(value: int | float) -> str:

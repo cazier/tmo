@@ -42,14 +42,14 @@ class Render:
 
 class AnnotatedSQLModel(SQLModel):
     @typing.overload
-    def fields_by_annotation(self, string: str) -> str:
+    def fields_by_annotation(self, string: str) -> typing.Iterable[tuple[str, str]]:
         ...
 
     @typing.overload
-    def fields_by_annotation(self, klass: type[_T]) -> _T:
+    def fields_by_annotation(self, klass: type[_T]) -> typing.Iterable[tuple[str, _T]]:
         ...
 
-    def fields_by_annotation(self, string: str = "", klass: typing.Optional[type[_T]] = None) -> tuple[str, str | _T]:
+    def fields_by_annotation(self, string="", klass=None):
         for name, field in itertools.chain(self.model_fields.items(), self.model_computed_fields.items()):
             for item in getattr(field, "metadata", getattr(getattr(field, "return_type", None), "__metadata__", [])):
                 if klass and isinstance(item, klass):

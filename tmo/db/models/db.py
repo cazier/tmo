@@ -17,7 +17,7 @@ class BillSubscriberLink(SQLModel, table=True):
 
 
 ## Base Models (containing actual scalar values)
-class SubscriberScalar(SQLModel):
+class SubscriberScalar(AnnotatedSQLModel):
     number: str = Field(unique=True, max_length=20)
     name: typing.Annotated[str, Render("header", 1, formatter=lambda k: k.split(" ")[0])]
 
@@ -28,12 +28,12 @@ class BillScalar(SQLModel):
 
 
 class DetailScalar(AnnotatedSQLModel):
-    phone: typing.Annotated[JsonDecimal, Render("changes", 1, name="Phone Cost"), "$"] = decimal_field()
+    phone: typing.Annotated[JsonDecimal, Render("charges", 1, name="Phone Cost"), "$"] = decimal_field()
     line: typing.Annotated[JsonDecimal, Render("charges", 2, name="Line Cost"), "$"] = decimal_field()
     insurance: typing.Annotated[JsonDecimal, Render("charges", 3, name="Insurance"), "$"] = decimal_field()
     usage: typing.Annotated[JsonDecimal, Render("charges", 4, name="Usage Charges"), "$"] = decimal_field()
 
-    total: typing.Annotated[JsonDecimal, Render("charges", 5, name="Total Charges")] = decimal_field()
+    total: typing.Annotated[JsonDecimal, Render("summary", 1, name="Total Charges")] = decimal_field()
 
     minutes: typing.Annotated[int, Render("usage", 1, name="Minutes (min)")] = Field(default=0)
     messages: typing.Annotated[int, Render("usage", 2, name="Messages (#)")] = Field(default=0)
