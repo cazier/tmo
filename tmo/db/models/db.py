@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import datetime
 import typing
 
@@ -13,9 +11,9 @@ class BaseModel(SQLModel):
 
 
 ## Many-to-Many Relationship Links
-class SubscriberBillLink(SQLModel, table=True):
-    subscriber_id: int = Field(foreign_key="subscriber.id", primary_key=True)
+class BillSubscriberLink(SQLModel, table=True):
     bill_id: int = Field(foreign_key="bill.id", primary_key=True)
+    subscriber_id: int = Field(foreign_key="subscriber.id", primary_key=True)
 
 
 ## Base Models (containing actual scalar values)
@@ -52,16 +50,16 @@ class ChargeScalar(AnnotatedSQLModel):
 class Subscriber(SubscriberScalar, BaseModel, table=True):
     number_format: str = Field(default="us", max_length=2)
 
-    details: list[Detail] = Relationship(back_populates="subscriber")
-    bills: list[Bill] = Relationship(back_populates="subscribers", link_model=SubscriberBillLink)
+    details: list["Detail"] = Relationship(back_populates="subscriber")
+    bills: list["Bill"] = Relationship(back_populates="subscribers", link_model=BillSubscriberLink)
 
     count: int = Field(default=0)
 
 
 class Bill(BillScalar, BaseModel, table=True):
-    charges: list[Charge] = Relationship(back_populates="bill")
-    details: list[Detail] = Relationship(back_populates="bill")
-    subscribers: list["Subscriber"] = Relationship(back_populates="bills", link_model=SubscriberBillLink)
+    charges: list["Charge"] = Relationship(back_populates="bill")
+    details: list["Detail"] = Relationship(back_populates="bill")
+    subscribers: list[Subscriber] = Relationship(back_populates="bills", link_model=BillSubscriberLink)
 
 
 class Detail(DetailScalar, BaseModel, table=True):

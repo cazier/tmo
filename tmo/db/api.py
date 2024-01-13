@@ -11,7 +11,7 @@ from tmo.db.models import Bill, Detail, Subscriber
 from tmo.db.schemas import (
     BillRead,
     BillReadWithSubscribers,
-    BillRender,
+    RenderLoader,
     SubscriberRead,
     SubscriberReadWithDetails,
     SubscribersRead,
@@ -59,8 +59,8 @@ async def get_bills(
     return bills
 
 
-@router.get("/bill/{id}", responses=_additional_responses, response_model=BillReadWithSubscribers)
-async def get_bill(*, id: int, session: Session = Depends(_session)) -> Bill:
+@router.get("/bill/{id}", responses=_additional_responses)
+async def get_bill(*, id: int, session: Session = Depends(_session)) -> BillReadWithSubscribers:
     bill = session.get(Bill, id)
     if not bill:
         raise HTTPException(status_code=404, detail="Bill could not be found")
@@ -77,7 +77,18 @@ async def get_subscribers(
 
 @router.get("/subscriber/{id}", responses=_additional_responses)
 async def get_subscriber(*, id: int, session: Session = Depends(_session)) -> SubscriberRead:
-    subscriber = session.exec(select(Subscriber).where(Subscriber.id == id)).first()
+    subscriber = (
+        session.exec(
+            select(Subscriber)
+            .options(joinedload(Subscriber.details))
+            .join(Subscriber.details)
+            .order_by(Detail.bill_id)
+            .where(Subscriber.id == id)
+        )
+        .unique()
+        .first()
+    )
+
     if not subscriber:
         raise HTTPException(status_code=404, detail="Subscriber could not be found")
     return subscriber
@@ -96,17 +107,17 @@ async def get_subscriber_charge(
 
 
 @router.get("/render/current", responses=_additional_responses)
-async def get_bill_by_current(*, session: Session = Depends(_session)) -> Sequence[BillRender]:
+async def get_bill_by_current(*, session: Session = Depends(_session)) -> Sequence[RenderLoader]:
     return await _get_bill(session=session, id=None, year=None, month=None)
 
 
 @router.get("/render/{year}/{month}", responses=_additional_responses)
-async def get_bill_by_date(*, year: int, month: int, session: Session = Depends(_session)) -> Sequence[BillRender]:
+async def get_bill_by_date(*, year: int, month: int, session: Session = Depends(_session)) -> Sequence[RenderLoader]:
     return await _get_bill(year=year, month=month, session=session, id=None)
 
 
 @router.get("/render/{id}", responses=_additional_responses)
-async def get_bill_by_id(*, id: int, session: Session = Depends(_session)) -> Sequence[BillRender]:
+async def get_bill_by_id(*, id: int, session: Session = Depends(_session)) -> Sequence[RenderLoader]:
     return await _get_bill(id=id, session=session, year=None, month=None)
 
 
