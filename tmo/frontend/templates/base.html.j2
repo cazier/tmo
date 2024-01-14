@@ -14,7 +14,7 @@
         <script src="/static/brands.js"></script>
         <script src="/static/solid.js"></script>
         <script src="/static/cash.js"></script>
-    {% endif %}
+        {% endif %}
     <title>{% block title required %}{% endblock title %}</title>
     {% block header %}{% endblock header %}
     <style>
@@ -99,6 +99,8 @@
         });
     });
 </script>
-{% block footer %}{% endblock footer %}
+{% block footer %}
+<script src="/static/scripts.js"></script>
+{% endblock footer %}
 
 </html>

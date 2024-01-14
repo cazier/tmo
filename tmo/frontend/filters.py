@@ -21,10 +21,10 @@ def table(data: list[BillRender]) -> dict[str, dict[str, list[typing.Any]]]:
 
     for subscriber in present.subscribers:
         for key, schema in subscriber.fields_by_annotation(klass=Render):
-            resp[schema.section][schema.name].append(schema.formatter(getattr(subscriber, key)))
+            resp[schema.section][(key, schema.name)].append(schema.formatter(getattr(subscriber, key)))
 
         for key, schema in subscriber.details.fields_by_annotation(klass=Render):
-            resp[schema.section][schema.name].append(schema.formatter(getattr(subscriber.details, key)))
+            resp[schema.section][(key, schema.name)].append(schema.formatter(getattr(subscriber.details, key)))
 
             if key == "total":
                 for past_subscriber in previous.subscribers:

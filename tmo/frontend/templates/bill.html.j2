@@ -15,59 +15,59 @@
                 <tr>
                     <th></th>
                     {% for subscriber in values %}
-                    <th class="has-text-weight-semibold" colspan="2">{{ subscriber }}</th>
+                    <th class="has-text-weight-semibold">{{ subscriber }}</th>
                     {% endfor %}
                 </tr>
                 {% endfor %}
             </thead>
             <tbody>
-                {% for key, values in table.charges.items() %}
-                <tr>
+                {% for (name, key), values in table.charges.items() %}
+                <tr id="{{ name }}">
                     <th>{{ key }}</th>
                     {% for value in values %}
-                    <td class="currency-symbol">
-                        <span>$</span>
-                    </td>
-                    <td class="currency-value {{ value | currency_class }}">
-                        <span>{{ "{0:.2f}".format(value) if value != 0 else "—" }}</span>
+                    <td>
+                        <div class="currency">
+                            <span class="currency-symbol">$</span>
+                            <span class="currency-value {{ value | currency_class }}">{{ "{0:.2f}".format(value) if value != 0 else "—" }}</span>
+                        </div>
                     </td>
                     {% endfor %}
                 </tr>
                 {% endfor %}
                 <tr class="blank-row"></tr>
-                {% for key, values in table.usage.items() %}
-                <tr>
+                {% for (name, key), values in table.usage.items() %}
+                <tr id="{{ name }}">
                     <th>{{ key }}</th>
                     {% for value in values %}
-                    <td class="usage" colspan="2">
+                    <td class="usage">
                         <span>{{ value }}</span>
                     </td>
                     {% endfor %}
                 </tr>
                 {% endfor %}
                 <tr class="blank-row"></tr>
-                {% for key, values in table.summary.items() %}
-                <tr>
+                {% for (name, key), values in table.summary.items() %}
+                <tr id="{{ name }}">
                     <th>{{ key }}</th>
                     {% for value in values %}
-                    <td class="currency-symbol">
-                        <span>$</span>
-                    </td>
-                    <td class="currency-value {{ value | currency_class }}">
-                        <span>{{ "{0:.2f}".format(value) if value != 0 else "—" }}</span>
+                    <td>
+                        <div class="currency">
+                            <span class="currency-symbol">$</span>
+                            <span class="currency-value {{ value | currency_class }}">{{ "{0:.2f}".format(value) if value != 0 else "—" }}</span>
+                        </div>
                     </td>
                     {% endfor %}
                 </tr>
                 {% endfor %}
                 {% for key, values in table.recap.items() %}
-                <tr>
+                <tr id="recap">
                     <th>{{ key }}</th>
                     {% for value in values %}
-                    <td class="currency-symbol">
-                        <span>$</span>
-                    </td>
-                    <td class="currency-value {{ value | currency_class }}">
-                        <span>{{ "{0:.2f}".format(value) if value != 0 else "—" }}</span>
+                    <td>
+                        <div class="currency">
+                            <span class="currency-symbol">$</span>
+                            <span class="currency-value {{ value | currency_class }}">{{ "{0:.2f}".format(value) if value != 0 else "—" }}</span>
+                        </div>
                     </td>
                     {% endfor %}
                 </tr>
@@ -85,28 +85,34 @@
         text-align: center !important;
     }
 
-    td.currency-symbol {
+    td div.currency {
+        display: flex;
+        justify-content: space-between;
+        /* align-items: center; */
+    }
+
+    td span.currency-symbol {
         border-right: none;
     }
 
-    td.currency-value {
+    td span.currency-value {
         text-align: right !important;
         border-left: none !important;
     }
 
-    td.currency-value.is-currency-negative>span {
+    td span.currency-value.is-currency-negative>span {
         color: var(--cornell-red);
     }
 
-    td.currency-value.is-currency-negative>span::before {
+    td span.currency-value.is-currency-negative>span::before {
         content: "(";
     }
 
-    td.currency-value.is-currency-negative>span::after {
+    td span.currency-value.is-currency-negative>span::after {
         content: ")";
     }
 
-    td.currency-value.is-currency-zero  {
+    td span.currency-value.is-currency-zero {
         text-align: center !important;
     }
 
@@ -115,15 +121,16 @@
     }
 </style>
 <script>
-    $(
-        function () {
-            $("#date").text(
-                [
-                    new Intl.DateTimeFormat("en-US", { month: "long" }).format(new Date("{{ date.isoformat() }}")),
-                    "{{ date.year }}"
-                ].join(" "))
-        }
-    );
+    $(function () {
+        $("#date").text([
+            new Intl.DateTimeFormat("en-US", { month: "long" }).format(new Date("{{ date.isoformat() }}")),
+            "{{ date.year }}"
+        ].join(" "))
+
+        $(['minutes', 'messages', 'data']).each((_, kind) => colorRow(kind));
+        colorComparison();
+    });
+
 
     // document.addEventListener('copy', function (e) {
     //   var selectedText = window.getSelection().toString();
@@ -149,4 +156,5 @@
     //   e.preventDefault();
     // });
 </script>
+{{ super() }}
 {% endblock footer %}
