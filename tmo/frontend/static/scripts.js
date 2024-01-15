@@ -107,3 +107,19 @@ function colorComparison() {
             };
     });
 }
+
+// onload functions
+$(function () {
+    $("#panel ul li").on("click", function () {
+        var button = this;
+        $(button).addClass('is-active');
+        $(button).siblings().each( function (_, value) {
+            $(value).removeClass('is-active');
+        });
+
+        $("#panels").children().each( function (_, value) {
+            if (value.id == button.dataset.target) { $(value).show(); }
+            else { $(value).hide(); }
+        });
+    });
+});

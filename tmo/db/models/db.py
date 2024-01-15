@@ -35,9 +35,9 @@ class DetailScalar(AnnotatedSQLModel):
 
     total: typing.Annotated[JsonDecimal, Render("summary", 1, name="Total Charges")] = decimal_field()
 
-    minutes: typing.Annotated[int, Render("usage", 1, name="Minutes (min)")] = Field(default=0)
-    messages: typing.Annotated[int, Render("usage", 2, name="Messages (#)")] = Field(default=0)
-    data: typing.Annotated[JsonDecimal, Render("usage", 3, name="Data (GB)")] = decimal_field()
+    minutes: typing.Annotated[int, Render("usage", 1, name="Minutes (min)"), "#"] = Field(default=0)
+    messages: typing.Annotated[int, Render("usage", 2, name="Messages (#)"), "#"] = Field(default=0)
+    data: typing.Annotated[JsonDecimal, Render("usage", 3, name="Data (GB)"), "#"] = decimal_field()
 
 
 class ChargeScalar(AnnotatedSQLModel):

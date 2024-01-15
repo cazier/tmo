@@ -10,7 +10,7 @@ from httpx import AsyncClient
 
 from tmo.config import api as config
 from tmo.db.api import router as api
-from tmo.frontend.filters import currency_class, table
+from tmo.frontend.filters import currency_class, generate_charts, generate_table
 
 templates = Jinja2Templates(directory=pathlib.Path(__file__).parent.joinpath("templates"))
 templates.env.globals.update(domain="T-Mobile Bills", cdn=not config["debug"])
@@ -41,8 +41,11 @@ async def homepage(
     if resp.status_code != 200:
         return _error_printer(resp.status_code, request)
 
-    data = table((bill := resp.json()))
+    current, previous = resp.json()
+
+    data = generate_table([current, previous])
+    charts = generate_charts(current)
 
     return templates.TemplateResponse(
-        request=request, name="bill.html.j2", context={"bill": bill, "table": data, "date": date}
+        request=request, name="bill.html.j2", context={"table": data, "date": date, "charts": charts}
     )

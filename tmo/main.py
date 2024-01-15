@@ -16,7 +16,11 @@ def serve(
     reload: bool = typer.Option(default=False, help="enable auto-reload"),
 ) -> None:
     uvicorn.run(
-        "tmo.web:app", host=host, port=port, reload=reload, reload_includes=["*.j2", "config.toml"] if reload else None
+        "tmo.web:app",
+        host=host,
+        port=port,
+        reload=reload,
+        reload_includes=["*.j2", "*.js", "config.toml"] if reload else None,
     )
 
 
@@ -37,7 +41,7 @@ def playground(db: Annotated[Optional[pathlib.Path], typer.Option(help="Path to 
 
     from tmo.config import database
     from tmo.db.highlight import db_print
-    from tmo.db.models import Bill, Charge, Detail, MonthValidator, Subscriber
+    from tmo.db.models import Bill, Charge, Detail, Subscriber
 
     updates: dict[str, str | bool]
 

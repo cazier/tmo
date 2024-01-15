@@ -8,72 +8,123 @@
         <h1 class="title" id="date"></h1>
     </div>
     <br>
-    <div class="table-container container">
-        <table class="table is-bordered is-hoverable" style="white-space: nowrap;">
-            <thead class="bill-header">
-                {% for values in table.header.values() %}
-                <tr>
-                    <th></th>
-                    {% for subscriber in values %}
-                    <th class="has-text-weight-semibold">{{ subscriber }}</th>
+    <div id="panel" class="tabs">
+        <ul>
+            <li class="is-active" data-target="details">
+                <a>
+                    <span class="icon is-small"><i class="fas fa-hashtag" aria-hidden="true"></i></span>
+                    <span>Details</span>
+                </a>
+            </li>
+            <li data-target="minutes">
+                <a>
+                    <span class="icon is-small"><i class="fas fa-phone-volume" aria-hidden="true"></i></span>
+                    <span>Calls</span>
+                </a>
+            </li>
+            <li data-target="messages">
+                <a>
+                    <span class="icon is-small"><i class="fas fa-comments" aria-hidden="true"></i></span>
+                    <span>Messages</span>
+                </a>
+            </li>
+            <li data-target="data">
+                <a>
+                    <span class="icon is-small"><i class="fas fa-server" aria-hidden="true"></i></span>
+                    <span>Data</span>
+                </a>
+            </li>
+            <li data-target="transaction">
+                <a>
+                    <span class="icon is-small"><i class="fas fa-money-bill-transfer" aria-hidden="true"></i></span>
+                    <span>Amount Due</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+    <div id="panels">
+        <div id="details" class="table-container container is-centered">
+            <table class="table is-bordered is-hoverable is-fullwidth" style="white-space: nowrap;">
+                <thead class="bill-header">
+                    {% for values in table.header.values() %}
+                    <tr>
+                        <th></th>
+                        {% for subscriber in values %}
+                        <th class="has-text-weight-semibold">{{ subscriber }}</th>
+                        {% endfor %}
+                    </tr>
                     {% endfor %}
-                </tr>
-                {% endfor %}
-            </thead>
-            <tbody>
-                {% for (name, key), values in table.charges.items() %}
-                <tr id="{{ name }}">
-                    <th>{{ key }}</th>
-                    {% for value in values %}
-                    <td>
-                        <div class="currency">
-                            <span class="currency-symbol">$</span>
-                            <span class="currency-value {{ value | currency_class }}">{{ "{0:.2f}".format(value) if value != 0 else "—" }}</span>
-                        </div>
-                    </td>
+                </thead>
+                <tbody>
+                    {% for (name, key), values in table.charges.items() %}
+                    <tr id="{{ name }}">
+                        <th>{{ key }}</th>
+                        {% for value in values %}
+                        <td>
+                            <div class="currency">
+                                <span class="currency-symbol">$</span>
+                                <span class="currency-value {{ value | currency_class }}">
+                                    {{ "{0:.2f}".format(value) if value != 0 else "—" }}
+                                </span>
+                            </div>
+                        </td>
+                        {% endfor %}
+                    </tr>
                     {% endfor %}
-                </tr>
-                {% endfor %}
-                <tr class="blank-row"></tr>
-                {% for (name, key), values in table.usage.items() %}
-                <tr id="{{ name }}">
-                    <th>{{ key }}</th>
-                    {% for value in values %}
-                    <td class="usage">
-                        <span>{{ value }}</span>
-                    </td>
+                    <tr class="blank-row"></tr>
+                    {% for (name, key), values in table.usage.items() %}
+                    <tr id="{{ name }}">
+                        <th>{{ key }}</th>
+                        {% for value in values %}
+                        <td class="usage">
+                            <span>{{ value }}</span>
+                        </td>
+                        {% endfor %}
+                    </tr>
                     {% endfor %}
-                </tr>
-                {% endfor %}
-                <tr class="blank-row"></tr>
-                {% for (name, key), values in table.summary.items() %}
-                <tr id="{{ name }}">
-                    <th>{{ key }}</th>
-                    {% for value in values %}
-                    <td>
-                        <div class="currency">
-                            <span class="currency-symbol">$</span>
-                            <span class="currency-value {{ value | currency_class }}">{{ "{0:.2f}".format(value) if value != 0 else "—" }}</span>
-                        </div>
-                    </td>
+                    <tr class="blank-row"></tr>
+                    {% for (name, key), values in table.summary.items() %}
+                    <tr id="{{ name }}">
+                        <th>{{ key }}</th>
+                        {% for value in values %}
+                        <td>
+                            <div class="currency">
+                                <span class="currency-symbol">$</span>
+                                <span class="currency-value {{ value | currency_class }}">
+                                    {{ "{0:.2f}".format(value) if value != 0 else "—" }}
+                                </span>
+                            </div>
+                        </td>
+                        {% endfor %}
+                    </tr>
                     {% endfor %}
-                </tr>
-                {% endfor %}
-                {% for key, values in table.recap.items() %}
-                <tr id="recap">
-                    <th>{{ key }}</th>
-                    {% for value in values %}
-                    <td>
-                        <div class="currency">
-                            <span class="currency-symbol">$</span>
-                            <span class="currency-value {{ value | currency_class }}">{{ "{0:.2f}".format(value) if value != 0 else "—" }}</span>
-                        </div>
-                    </td>
+                    {% for key, values in table.recap.items() %}
+                    <tr id="recap">
+                        <th>{{ key }}</th>
+                        {% for value in values %}
+                        <td>
+                            <div class="currency">
+                                <span class="currency-symbol">$</span>
+                                <span class="currency-value {{ value | currency_class }}">
+                                    {{ "{0:.2f}".format(value) if value != 0 else "—" }}
+                                </span>
+                            </div>
+                        </td>
+                        {% endfor %}
+                    </tr>
                     {% endfor %}
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        </div>
+        <div id="minutes" class="container is-centered" style="display: none; width: 50%;">
+            <canvas id="minutes-chart"></canvas>
+        </div>
+        <div id="messages" class="container is-centered" style="display: none; width: 50%;">
+            <canvas id="messages-chart"></canvas>
+        </div>
+        <div id="data" class="container is-centered" style="display: none; width: 50%;">
+            <canvas id="data-chart"></canvas>
+        </div>
     </div>
 </section>
 {% endblock body %}
@@ -131,6 +182,19 @@
         colorComparison();
     });
 
+    (async function () {
+        for (const [kind, data] of Object.entries(JSON.parse('{{ charts | tojson }}'))) {
+
+            new Chart(
+                $(`#${kind}-chart`),
+                {
+                    type: 'pie',
+                    options: { animation: false, plugins: { legend: { position: 'left' } } },
+                    data: { labels: Object.keys(data), datasets: [{ label: kind, data: Object.values(data) }] }
+                }
+            );
+        };
+    })();
 
     // document.addEventListener('copy', function (e) {
     //   var selectedText = window.getSelection().toString();
