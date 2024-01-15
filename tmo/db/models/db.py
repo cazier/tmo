@@ -42,7 +42,6 @@ class DetailScalar(AnnotatedSQLModel):
 
 class ChargeScalar(AnnotatedSQLModel):
     name: str
-
     total: typing.Annotated[JsonDecimal, "$"] = decimal_field()
 
 
