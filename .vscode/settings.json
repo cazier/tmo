@@ -14,8 +14,12 @@
         "**/__pycache__": true,
         "**/.mypy_cache": true,
         "**/.ruff_cache": true,
-
         "node_modules": true,
         "package*.json": true
+    },
+    "files.associations": {
+        "*.html.j2": "html",
+        "*.js.j2": "javascript",
+        "*.svg.j2": "svg"
     }
 }
