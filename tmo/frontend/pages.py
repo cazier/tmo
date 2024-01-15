@@ -9,6 +9,7 @@ from fastapi.templating import Jinja2Templates
 from httpx import AsyncClient
 
 from tmo.config import api as config
+from tmo.config import frontend
 from tmo.db.api import router as api
 from tmo.frontend.filters import currency_class, generate_charts, generate_table
 
@@ -33,19 +34,19 @@ async def homepage(
     else:
         date = datetime.date.today()
 
-    base_url = f"{request.base_url}{api.prefix[1:]}/render"
+    base_url = f"{request.base_url}{api.prefix[1:]}"
 
     async with AsyncClient() as client:
-        resp = await client.get(f"{base_url}/{date.year}/{date.month}")
+        resp = await client.get(f"{base_url}/render/{date.year}/{date.month}")
 
     if resp.status_code != 200:
         return _error_printer(resp.status_code, request)
 
     current, previous = resp.json()
 
-    data = generate_table([current, previous])
-    charts = generate_charts(current)
+    data, owed = generate_table([current, previous], frontend.get("dependents", {}))
+    charts = generate_charts(current, frontend.get("colors", {}))
 
     return templates.TemplateResponse(
-        request=request, name="bill.html.j2", context={"table": data, "date": date, "charts": charts}
+        request=request, name="bill.html.j2", context={"table": data, "date": date, "charts": charts, "owed": owed}
     )

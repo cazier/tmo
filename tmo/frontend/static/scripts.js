@@ -26,9 +26,10 @@ class Color {
 
     static fromHex(string) { return new Color(parseInt(string.slice(1, 3), 16), parseInt(string.slice(3, 5), 16), parseInt(string.slice(5, 7), 16))}
 
-    static red()    { return Color.fromHex("#FF3F3F"); };
-    static yellow() { return Color.fromHex("#FCEF64"); };
-    static green()  { return Color.fromHex("#4AE27A"); };
+    static red()     { return Color.fromHex("#FF3F3F"); };
+    static yellow()  { return Color.fromHex("#FCEF64"); };
+    static green()   { return Color.fromHex("#4AE27A"); };
+    static magenta() { return Color.fromHex("#D67AB1"); };
 
     static increase() { return Color.red().rgb() };
     static decrease() { return Color.green().rgb() };
@@ -87,7 +88,7 @@ function colorRow(identifier) {
     var elements = $(`#${identifier} td`);
     var values = Object.values(elements.map((_, x) => parseFloat(x.querySelector("span").textContent))).sort((a, b) => a - b);
 
-    elements.each((_, x) => {x.style.backgroundColor = colors[values.indexOf(parseFloat(x.querySelector('span').textContent))]});
+    elements.each((_, x) => {x.style.backgroundColor = colors[values.indexOf(parseFloat(x.querySelector("span").textContent))]});
 };
 
 /**
@@ -98,28 +99,38 @@ function colorComparison() {
     $("#total td div.currency span.currency-value").each(function (index, value) {
             var nv = parseFloat(value.textContent);
             var rv = parseFloat(recap[index].textContent);
-            var parent = value.closest('td').style;
+            var parent = value.closest("td");
 
             if (nv > rv) {
-                parent.backgroundColor = Color.increase();
+                $(parent).css("backgroundColor", Color.increase());
             } else if (nv < rv) {
-                parent.backgroundColor = Color.decrease();
+                $(parent).css("backgroundColor", Color.decrease());
             };
     });
 }
 
 // onload functions
 $(function () {
+    // Add color to the icon
+    $("#icon").css("color", Color.magenta().rgb());
+
+    // Enable panel display in tabs
     $("#panel ul li").on("click", function () {
         var button = this;
-        $(button).addClass('is-active');
+        $(button).addClass("is-active");
         $(button).siblings().each( function (_, value) {
-            $(value).removeClass('is-active');
+            $(value).removeClass("is-active");
         });
 
         $("#panels").children().each( function (_, value) {
             if (value.id == button.dataset.target) { $(value).show(); }
             else { $(value).hide(); }
         });
+    });
+
+    // Enable showing navbar menu on narrow screens
+    $(".navbar-burger").on("click", function () {
+        $(".navbar-burger").toggleClass("is-active");
+        $(".navbar-menu").toggleClass("is-active");
     });
 });

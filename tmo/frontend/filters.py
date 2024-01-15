@@ -2,20 +2,20 @@ import collections
 import typing
 
 from pydantic import validate_call
-from sqlmodel import SQLModel
 
 from tmo.db.models import Render
 from tmo.db.schemas import BillRender
 
-_T = typing.TypeVar("_T")
-_M = typing.TypeVar("_M", bound=SQLModel)
-
 
 @validate_call
-def generate_table(data: list[BillRender]) -> dict[str, dict[str, list[typing.Any]]]:
+def generate_table(
+    data: list[BillRender], dependents: dict[str, list[str]]
+) -> tuple[dict[str, dict[str, list[typing.Any]]], dict[str, float]]:
     present, previous = data
 
     resp = {section: collections.defaultdict(list) for section in BillRender.sections}
+    totals = {name: 0.0 for name in dependents}
+    _lookup = {name: target for target, names in dependents.items() for name in names}
 
     for subscriber in present.subscribers:
         for key, schema in subscriber.fields_by_annotation(klass=Render):
@@ -32,6 +32,9 @@ def generate_table(data: list[BillRender]) -> dict[str, dict[str, list[typing.An
                 else:
                     resp["recap"]["(Last Month)"].append(schema.formatter(0))
 
+        if target := _lookup.get(_split(subscriber.name)):
+            totals[target] += float(subscriber.details.total)
+
     for charge in present.charges:
         resp["shared"][charge.name] = {"present": charge.total}
 
@@ -44,18 +47,25 @@ def generate_table(data: list[BillRender]) -> dict[str, dict[str, list[typing.An
 
         resp["shared"][charge.name]["past"] = amount
 
-    return resp
+    return resp, totals
 
 
 @validate_call
-def generate_charts(data: BillRender) -> dict[str, float]:
+def generate_charts(data: BillRender, colors: dict[str, str]) -> dict[str, float]:
     resp = collections.defaultdict(dict)
+    resp["colors"] = []
 
     for subscriber in data.subscribers:
         for key, _ in subscriber.details.fields_by_annotation(string="#"):
             resp[key][subscriber.name] = float(getattr(subscriber.details, key))
 
+        resp["colors"].append(colors[_split(subscriber.name)])
+
     return resp
+
+
+def _split(string: str) -> str:
+    return string.split(" ")[0]
 
 
 def currency_class(value: int | float) -> str:

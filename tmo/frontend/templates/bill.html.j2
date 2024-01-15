@@ -8,7 +8,7 @@
         <h1 class="title" id="date"></h1>
     </div>
     <br>
-    <div id="panel" class="tabs">
+    <div id="panel" class="tabs container">
         <ul>
             <li class="is-active" data-target="details">
                 <a>
@@ -178,19 +178,21 @@
             "{{ date.year }}"
         ].join(" "))
 
-        $(['minutes', 'messages', 'data']).each((_, kind) => colorRow(kind));
+        $(["minutes", "messages", "data"]).each((_, kind) => colorRow(kind));
         colorComparison();
     });
 
     (async function () {
-        for (const [kind, data] of Object.entries(JSON.parse('{{ charts | tojson }}'))) {
+        charts = JSON.parse(`{{ charts | tojson }}`);
+        for (const [kind, data] of Object.entries(charts)) {
+            if (kind == "colors") { continue; };
 
             new Chart(
                 $(`#${kind}-chart`),
                 {
-                    type: 'pie',
-                    options: { animation: false, plugins: { legend: { position: 'left' } } },
-                    data: { labels: Object.keys(data), datasets: [{ label: kind, data: Object.values(data) }] }
+                    type: "pie",
+                    options: { animation: false, plugins: { legend: { position: "right" } } },
+                    data: { labels: Object.keys(data), datasets: [{ label: kind, data: Object.values(data), backgroundColor: charts["colors"] }] }
                 }
             );
         };
