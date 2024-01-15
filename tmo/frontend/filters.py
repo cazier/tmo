@@ -10,11 +10,13 @@ from tmo.db.schemas import BillRender
 @validate_call
 def generate_table(
     data: list[BillRender], dependents: dict[str, list[str]]
-) -> tuple[dict[str, dict[str, list[typing.Any]]], dict[str, float]]:
+) -> tuple[dict[str, dict[str, list[typing.Any]]], dict[str, float], float]:
     present, previous = data
 
+    total = present.total
+
     resp = {section: collections.defaultdict(list) for section in BillRender.sections}
-    totals = {name: 0.0 for name in dependents}
+    resp.update(shared=[], owed={name: 0.0 for name in dependents})
     _lookup = {name: target for target, names in dependents.items() for name in names}
 
     for subscriber in present.subscribers:
@@ -33,21 +35,19 @@ def generate_table(
                     resp["recap"]["(Last Month)"].append(schema.formatter(0))
 
         if target := _lookup.get(_split(subscriber.name)):
-            totals[target] += float(subscriber.details.total)
+            resp["owed"][target] += float(subscriber.details.total)
 
     for charge in present.charges:
-        resp["shared"][charge.name] = {"present": charge.total}
+        values = {"name": charge.name, "present": charge.total, "previous": 0}
 
         for past_charge in previous.charges:
             if past_charge.name == charge.name:
-                amount = past_charge.total
+                values["previous"] = past_charge.total
                 break
-        else:
-            amount = 0
 
-        resp["shared"][charge.name]["past"] = amount
+        resp["shared"].append(values)
 
-    return resp, totals
+    return total, resp
 
 
 @validate_call

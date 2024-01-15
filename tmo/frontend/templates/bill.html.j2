@@ -5,7 +5,12 @@
 {% block body %}
 <section class="section">
     <div class="container">
-        <h1 class="title" id="date"></h1>
+        <h1>
+            <span class="title" id="date"></span>
+            <span class="title">&nbsp;&nbsp;&mdash;&nbsp;</span>
+            <span class="title has-text-info">${{ total }}</span>
+        </h1>
+
     </div>
     <br>
     <div id="panel" class="tabs container">
@@ -34,7 +39,7 @@
                     <span>Data</span>
                 </a>
             </li>
-            <li data-target="transaction">
+            <li data-target="transactions">
                 <a>
                     <span class="icon is-small"><i class="fas fa-money-bill-transfer" aria-hidden="true"></i></span>
                     <span>Amount Due</span>
@@ -115,6 +120,57 @@
                     {% endfor %}
                 </tbody>
             </table>
+            {% if table.shared %}
+                <section class="section">
+                    <h3 class="title">Shared Charges</h3>
+                    <table class="table is-bordered is-hoverable" style="white-space: nowrap;">
+                        <thead>
+                            <tr>
+                                <th class="has-text-centered">Name</th>
+                                <th class="has-text-centered">Charge</th>
+                                <th class="has-text-centered">Previously</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for shared in table.shared %}
+                                <tr class="shared">
+                                    <td>{{ shared.name.title() }}</td>
+                                    <td>
+                                        <div class="currency">
+                                            <span class="currency-symbol">$</span>
+                                            <span class="currency-value {{ shared.present | currency_class }}">
+                                                {{ "{0:.2f}".format(shared.present) }}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="currency">
+                                            <span class="currency-symbol">$</span>
+                                            <span class="currency-value {{ shared.previous | currency_class }}">
+                                                {{ "{0:.2f}".format(shared.previous) }}
+                                            </span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </section>
+            {% endif %}
+        </div>
+        <div id="transactions" class="container is-centered" style="display: none; width: 50%;">
+            <section class="section">
+                <div class="tile is-ancestor">
+                    {% for name, amount in table.owed.items() %}
+                        <div class="tile is-3 is-parent">
+                            <article class="tile is-child box">
+                                <p class="title">From {{ name }}</p>
+                                <p class="subtitle has-text-right">${{ "{0:.2f}".format(amount) if amount}}</p>
+                            </article>
+                        </div>
+                    {% endfor %}
+                </div>
+            </section>
         </div>
         <div id="minutes" class="container is-centered" style="display: none; width: 50%;">
             <canvas id="minutes-chart"></canvas>
@@ -139,36 +195,29 @@
     td div.currency {
         display: flex;
         justify-content: space-between;
-        /* align-items: center; */
     }
 
-    td span.currency-symbol {
-        border-right: none;
+    span.currency-value.is-currency-negative {
+        color: #b3001bff;
     }
 
-    td span.currency-value {
-        text-align: right !important;
-        border-left: none !important;
-    }
-
-    td span.currency-value.is-currency-negative>span {
-        color: var(--cornell-red);
-    }
-
-    td span.currency-value.is-currency-negative>span::before {
+    span.currency-value.is-currency-negative::before {
         content: "(";
     }
 
-    td span.currency-value.is-currency-negative>span::after {
+    span.currency-value.is-currency-negative::after {
         content: ")";
-    }
-
-    td span.currency-value.is-currency-zero {
-        text-align: center !important;
     }
 
     tr.blank-row {
         height: 15px;
+    }
+
+    tr.shared :first-child {
+        width: 30%;
+    }
+    tr.shared :not(:first-child) {
+        width: 35%;
     }
 </style>
 <script>

@@ -1,7 +1,7 @@
 import datetime
 import http
 import pathlib
-import typing
+from typing import Optional
 
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
@@ -24,11 +24,9 @@ def _error_printer(code: int, request: Request) -> HTMLResponse:
     return templates.TemplateResponse(request, "error.html.j2", {"status": http.HTTPStatus(code)}, code)
 
 
-@router.get("/bill/")
+@router.get("/bill")
 @router.get("/bill/{year}/{month}")
-async def homepage(
-    *, year: typing.Optional[int] = None, month: typing.Optional[int] = None, request: Request
-) -> HTMLResponse:
+async def bill(*, year: Optional[int] = None, month: Optional[int] = None, request: Request) -> HTMLResponse:
     if year and month:
         date = datetime.date(year, month, 1)
     else:
@@ -44,9 +42,11 @@ async def homepage(
 
     current, previous = resp.json()
 
-    data, owed = generate_table([current, previous], frontend.get("dependents", {}))
+    total, table = generate_table([current, previous], frontend.get("dependents", {}))
     charts = generate_charts(current, frontend.get("colors", {}))
 
     return templates.TemplateResponse(
-        request=request, name="bill.html.j2", context={"table": data, "date": date, "charts": charts, "owed": owed}
+        request=request,
+        name="bill.html.j2",
+        context={"table": table, "date": date, "charts": charts, "total": total},
     )
