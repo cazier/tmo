@@ -1,11 +1,9 @@
 /**
  * Represents a color with red, green, and blue components.
- * @class
  */
 class Color {
     /**
      * Creates a new Color instance.
-     * @constructor
      * @param {number} red - The red component (0-255).
      * @param {number} green - The green component (0-255).
      * @param {number} blue - The blue component (0-255).
@@ -24,7 +22,7 @@ class Color {
         return `rgb(${this.red},${this.green},${this.blue})`
     }
 
-    static fromHex(string) { return new Color(parseInt(string.slice(1, 3), 16), parseInt(string.slice(3, 5), 16), parseInt(string.slice(5, 7), 16))}
+    static fromHex(string) { return new Color(parseInt(string.slice(1, 3), 16), parseInt(string.slice(3, 5), 16), parseInt(string.slice(5, 7), 16)) }
 
     static red()     { return Color.fromHex("#FF3F3F"); };
     static yellow()  { return Color.fromHex("#FCEF64"); };
@@ -37,7 +35,6 @@ class Color {
 
 /**
  * Generates a color gradient between three colors.
- * @function
  * @param {number} steps - The number of steps in the gradient.
  * @param {Color} start - The starting color.
  * @param {Color} middle - The middle color.
@@ -81,14 +78,25 @@ const colors = colorGradient($(`#minutes td`).length, Color.red(), Color.yellow(
 
 /**
  * Colors the cells in a row based on the specified identifier.
- * @function
  * @param {string} identifier - The identifier of the row.
  */
 function colorRow(identifier) {
     var elements = $(`#${identifier} td`);
     var values = Object.values(elements.map((_, x) => parseFloat(x.querySelector("span").textContent))).sort((a, b) => a - b);
 
-    elements.each((_, x) => {x.style.backgroundColor = colors[values.indexOf(parseFloat(x.querySelector("span").textContent))]});
+    elements.each((_, x) => { x.style.backgroundColor = colors[values.indexOf(parseFloat(x.querySelector("span").textContent))] });
+};
+
+/**
+ * Compares the content of two HTML elements and applies a background color based on the difference.
+ * @param {HTMLElement} present - The present HTML element for comparison.
+ * @param {HTMLElement} previous - The previous HTML element for comparison.
+ * @param {Function} callback - A callback function to modify the present element before applying styles.
+ */
+function compare(present, previous, callback) {
+    var diff = parseFloat(present.textContent) - parseFloat(previous.textContent);
+    var color = (diff > 0) ? Color.increase() : ((diff == 0) ? "" : Color.decrease());
+    $(callback(present)).css("backgroundColor", color);
 };
 
 /**
@@ -97,16 +105,14 @@ function colorRow(identifier) {
 function colorComparison() {
     var recap = $("#recap td div.currency span.currency-value");
     $("#total td div.currency span.currency-value").each(function (index, value) {
-            var nv = parseFloat(value.textContent);
-            var rv = parseFloat(recap[index].textContent);
-            var parent = value.closest("td");
-
-            if (nv > rv) {
-                $(parent).css("backgroundColor", Color.increase());
-            } else if (nv < rv) {
-                $(parent).css("backgroundColor", Color.decrease());
-            };
+        compare(value, recap[index], (c) => c.closest("td"));
     });
+
+    var shared = $("tr.shared td div span.currency-value");
+    shared.each((index, row) => {
+        if (index % 2 != 0) { return; };
+        compare(row, shared[index + 1], (c) => c.closest("td"));
+    })
 }
 
 // onload functions
@@ -118,11 +124,11 @@ $(function () {
     $("#panel ul li").on("click", function () {
         var button = this;
         $(button).addClass("is-active");
-        $(button).siblings().each( function (_, value) {
+        $(button).siblings().each(function (_, value) {
             $(value).removeClass("is-active");
         });
 
-        $("#panels").children().each( function (_, value) {
+        $("#panels").children().each(function (_, value) {
             if (value.id == button.dataset.target) { $(value).show(); }
             else { $(value).hide(); }
         });
