@@ -143,3 +143,10 @@ $(function () {
         $(".navbar-menu").toggleClass("is-active");
     });
 });
+
+// resize charts when enabling/disabling the print view
+window.matchMedia('print').addEventListener('change', () => {
+    for (let id in Chart.instances) {
+        Chart.instances[id].resize();
+    };
+});

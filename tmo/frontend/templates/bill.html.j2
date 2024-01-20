@@ -41,7 +41,7 @@
         </ul>
     </div>
     <div id="panels">
-        <div id="details" class="table-container container is-centered">
+        <div id="details" class="container is-centered">
             <table class="table is-bordered is-hoverable is-fullwidth" style="white-space: nowrap;">
                 <thead class="bill-header">
                     {% for values in table.header.values() %}
@@ -113,38 +113,62 @@
                     {% endfor %}
                 </tbody>
             </table>
-            <section class="section py-1">
-                <div class="tile is-ancestor">
-                    <div class="tile is-parent">
-                        <article class="tile is-child box">
-                            <p class="title has-text-grey-darker">Shared Charges</p>
-                            {% if table.shared %}
-                                <table class="table is-bordered is-hoverable" style="white-space: nowrap;">
-                                    <thead>
-                                        <tr>
-                                            <th class="has-text-centered">Name</th>
-                                            <th class="has-text-centered">Charge</th>
-                                            <th class="has-text-centered">Previously</th>
-                                        </tr>
-                                    </thead>
+            <div class="columns">
+                <div class="column">
+                    <p class="title is-4 my-2">Shared Charges</p>
+                    {% if table.shared %}
+                        <table class="table is-striped is-hoverable" style="white-space: nowrap;">
+                            <thead>
+                                <tr>
+                                    <th class="has-text-centered">Name</th>
+                                    <th class="has-text-centered">Charge</th>
+                                    <th class="has-text-centered">Previously</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for shared in table.shared %}
+                                <tr class="shared">
+                                    <td>{{ shared.name.title() }}</td>
+                                    <td>
+                                        <div class="currency">
+                                            <span class="currency-symbol">$</span>
+                                            <span
+                                                class="currency-value has-text-right {{ shared.present | currency_class }}">
+                                                {{ "{0:.2f}".format(shared.present) }}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="currency has-text-grey-light">
+                                            <span class="currency-symbol">$</span>
+                                            <span class="currency-value has-text-right">
+                                                {{ "{0:.2f}".format(shared.previous) }}
+                                            </span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p class="subtitle">(None)</p>
+                    {% endif %}
+                </div>
+                <div class="column ">
+                    <div class="tile is-ancestor">
+                        <div class="tile is-parent">
+                            <article class="tile is-child box py-1">
+                                <p class="title has-text-centered my-1 has-text-info">Summary</p>
+                                <table class="table is-hoverable is-fullwidth" style="white-space: nowrap;">
                                     <tbody>
-                                        {% for shared in table.shared %}
-                                        <tr class="shared">
-                                            <td>{{ shared.name.title() }}</td>
+                                        {% for name, amount in table.owed.items() %}
+                                        <tr>
+                                            <td class="has-text-weight-semibold">From {{ name }}</td>
                                             <td>
                                                 <div class="currency">
                                                     <span class="currency-symbol">$</span>
-                                                    <span
-                                                        class="currency-value has-text-right {{ shared.present | currency_class }}">
-                                                        {{ "{0:.2f}".format(shared.present) }}
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="currency has-text-grey-light">
-                                                    <span class="currency-symbol">$</span>
                                                     <span class="currency-value has-text-right">
-                                                        {{ "{0:.2f}".format(shared.previous) }}
+                                                        {{ "{0:.2f}".format(amount) }}
                                                     </span>
                                                 </div>
                                             </td>
@@ -152,36 +176,12 @@
                                         {% endfor %}
                                     </tbody>
                                 </table>
-                            {% else %}
-                                <p class="subtitle">(None)</p>
-                            {% endif %}
-                        </article>
-                    </div>
-                    <div class="tile is-parent">
-                        <article class="tile is-child box">
-                            <p class="title">Summary</p>
-                            <table class="table is-bordered is-hoverable" style="white-space: nowrap;">
-                                <tbody>
-                                    {% for name, amount in table.owed.items() %}
-                                    <tr>
-                                        <td class="has-text-weight-semibold">From {{ name }}</td>
-                                        <td>
-                                            <div class="currency">
-                                                <span class="currency-symbol">$</span>
-                                                <span
-                                                    class="currency-value has-text-right">
-                                                    {{ "{0:.2f}".format(amount) }}
-                                                </span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                    </article>
+                            </article>
+                        </div>
                     </div>
                 </div>
-            </section>
+                <div class="column"></div>
+            </div>
         </div>
         <div id="minutes" class="container is-centered chart" style="display: none;">
             <span class="title" style="display: none;">Calling</span>
@@ -221,13 +221,14 @@
         }
 
         div#panels div.container.chart {
-            width:70vh;
-            height:70vh;
+            width: 7in;
+            height: 7in;
             display: block !important;
             break-inside: avoid;
             break-before: always;
         }
     }
+
     thead.bill-header>tr>th,
     td.usage {
         text-align: center !important;
@@ -278,23 +279,26 @@
         for (const [kind, data] of Object.entries(charts)) {
             if (kind == "colors") { continue; };
 
+            var names = new Array();
+            var numbers = new Array();
+            var colors = new Array();
+
+            for (const [name, value] of Object.entries(data)) {
+                names.push(name);
+                numbers.push(value);
+                colors.push(charts['colors'][name]);
+            };
+
             new Chart(
                 $(`#${kind}-chart`),
                 {
                     type: "pie",
-                    options: { animation: false, plugins: { legend: { position: "right" } } },
-                    data: { labels: Object.keys(data), datasets: [{ label: kind, data: Object.values(data), backgroundColor: charts["colors"] }] }
+                    options: { animation: false, aspectRatio: 1, plugins: { legend: { position: "right" } } },
+                    data: { labels: names, datasets: [{ label: kind, data: numbers, backgroundColor: colors }] }
                 }
             );
         };
     })();
-
-    window.matchMedia('print').addEventListener('change', () => {
-        for (let id in Chart.instances) {
-            Chart.instances[id].resize();
-        };
-    });
-
     // document.addEventListener('copy', function (e) {
     //   var selectedText = window.getSelection().toString();
 

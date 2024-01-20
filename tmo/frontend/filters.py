@@ -53,15 +53,14 @@ def generate_table(
 
 
 @validate_call
-def generate_charts(data: BillRender, colors: dict[str, str]) -> dict[str, float]:
+def generate_charts(data: BillRender, colors: dict[str, str]) -> dict[str, dict[str, str | int | float]]:
     resp = collections.defaultdict(dict)
-    resp["colors"] = []
 
     for subscriber in data.subscribers:
         for key, _ in subscriber.details.fields_by_annotation(string="#"):
             resp[key][subscriber.name] = float(getattr(subscriber.details, key))
 
-        resp["colors"].append(colors[_split(subscriber.name)])
+        resp["colors"][subscriber.name] = colors[_split(subscriber.name)]
 
     return resp
 
