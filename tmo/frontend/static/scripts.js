@@ -129,8 +129,11 @@ $(function () {
         });
 
         $("#panels").children().each(function (_, value) {
-            if (value.id == button.dataset.target) { $(value).show(); }
-            else { $(value).hide(); }
+            if (value.id == button.dataset.target) {
+                $(value).show();
+            } else {
+                $(value).hide();
+            }
         });
     });
 

@@ -1,9 +1,9 @@
 {% extends "base.html.j2" %}
 
-{% block title %}{{ domain }}{% endblock title %}
+{% block title %}Bill {{ date.year }}.{{ "{:02d}".format(date.month) }}{% endblock title %}
 
 {% block body %}
-<section class="section">
+<section class="section py-1">
     <div class="container">
         <h1>
             <span class="title" id="date"></span>
@@ -113,56 +113,56 @@
                     {% endfor %}
                 </tbody>
             </table>
-            <section class="section">
+            <section class="section py-1">
                 <div class="tile is-ancestor">
                     <div class="tile is-parent">
                         <article class="tile is-child box">
-                            <p class="title">Shared Charges</p>
-            {% if table.shared %}
-                    <table class="table is-bordered is-hoverable" style="white-space: nowrap;">
-                        <thead>
-                            <tr>
-                                <th class="has-text-centered">Name</th>
-                                <th class="has-text-centered">Charge</th>
-                                <th class="has-text-centered">Previously</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for shared in table.shared %}
-                                <tr class="shared">
-                                    <td>{{ shared.name.title() }}</td>
-                                    <td>
-                                        <div class="currency">
-                                            <span class="currency-symbol">$</span>
+                            <p class="title has-text-grey-darker">Shared Charges</p>
+                            {% if table.shared %}
+                                <table class="table is-bordered is-hoverable" style="white-space: nowrap;">
+                                    <thead>
+                                        <tr>
+                                            <th class="has-text-centered">Name</th>
+                                            <th class="has-text-centered">Charge</th>
+                                            <th class="has-text-centered">Previously</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for shared in table.shared %}
+                                        <tr class="shared">
+                                            <td>{{ shared.name.title() }}</td>
+                                            <td>
+                                                <div class="currency">
+                                                    <span class="currency-symbol">$</span>
                                                     <span
                                                         class="currency-value has-text-right {{ shared.present | currency_class }}">
-                                                {{ "{0:.2f}".format(shared.present) }}
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="currency has-text-grey-light">
-                                            <span class="currency-symbol">$</span>
-                                            <span class="currency-value has-text-right">
-                                                {{ "{0:.2f}".format(shared.previous) }}
-                                            </span>
-                                        </div>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                                                        {{ "{0:.2f}".format(shared.present) }}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="currency has-text-grey-light">
+                                                    <span class="currency-symbol">$</span>
+                                                    <span class="currency-value has-text-right">
+                                                        {{ "{0:.2f}".format(shared.previous) }}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
                             {% else %}
                                 <p class="subtitle">(None)</p>
-            {% endif %}
+                            {% endif %}
                         </article>
-        </div>
+                    </div>
                     <div class="tile is-parent">
                         <article class="tile is-child box">
                             <p class="title">Summary</p>
                             <table class="table is-bordered is-hoverable" style="white-space: nowrap;">
                                 <tbody>
-                    {% for name, amount in table.owed.items() %}
+                                    {% for name, amount in table.owed.items() %}
                                     <tr>
                                         <td class="has-text-weight-semibold">From {{ name }}</td>
                                         <td>
@@ -178,19 +178,28 @@
                                     {% endfor %}
                                 </tbody>
                             </table>
-                            </article>
-                        </div>
+                    </article>
+                    </div>
                 </div>
             </section>
         </div>
-        <div id="minutes" class="container is-centered" style="display: none; width: 50%;">
-            <canvas id="minutes-chart"></canvas>
+        <div id="minutes" class="container is-centered chart" style="display: none;">
+            <span class="title" style="display: none;">Calling</span>
+            <div class="container" style="position: relative;">
+                <canvas id="minutes-chart"></canvas>
+            </div>
         </div>
-        <div id="messages" class="container is-centered" style="display: none; width: 50%;">
-            <canvas id="messages-chart"></canvas>
+        <div id="messages" class="container is-centered chart" style="display: none;">
+            <span class="title" style="display: none;">Messaging</span>
+            <div class="container" style="position: relative;">
+                <canvas id="messages-chart"></canvas>
+            </div>
         </div>
-        <div id="data" class="container is-centered" style="display: none; width: 50%;">
-            <canvas id="data-chart"></canvas>
+        <div id="data" class="container is-centered chart" style="display: none;">
+            <span class="title" style="display: none;">Data</span>
+            <div class="container" style="position: relative;">
+                <canvas id="data-chart"></canvas>
+            </div>
         </div>
     </div>
 </section>
@@ -199,11 +208,21 @@
 {% block footer %}
 <style>
     @media print {
+        @page {
+            margin: 0.25in;
+        }
+
         div#panel, nav.navbar {
             display: none;
         }
 
+        div#panels, div.chart span.title {
+            display: block !important;
+        }
+
         div#panels div.container.chart {
+            width:70vh;
+            height:70vh;
             display: block !important;
             break-inside: avoid;
             break-before: always;
@@ -269,6 +288,12 @@
             );
         };
     })();
+
+    window.matchMedia('print').addEventListener('change', () => {
+        for (let id in Chart.instances) {
+            Chart.instances[id].resize();
+        };
+    });
 
     // document.addEventListener('copy', function (e) {
     //   var selectedText = window.getSelection().toString();
