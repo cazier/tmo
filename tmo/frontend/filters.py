@@ -47,6 +47,8 @@ def generate_table(
 
         resp["shared"].append(values)
 
+    resp["owed"] = {key: value for key, value in resp["owed"].items() if value != 0}
+
     return total, resp
 
 
