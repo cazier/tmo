@@ -266,7 +266,7 @@
 <script>
     $(function () {
         $("#date").text([
-            new Intl.DateTimeFormat("en-US", { month: "long" }).format(new Date("{{ date.isoformat() }}")),
+            new Intl.DateTimeFormat("en-US", { month: "long" }).format(new Date("{{ date.year }}", "{{ date.month - 1 }}")),
             "{{ date.year }}"
         ].join(" "))
 
