@@ -1,12 +1,27 @@
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 120
+
+[tool.isort]
+line_length = 120
+profile = "black"
+
+[tool.ruff]
+line-length = 120
+
+[tool.mypy]
+strict = true
+explicit_package_bases = true
+
 [tool.poetry]
 name = "tmo"
-version = "0.1.0"
+version = "1.0.0"
 description = ""
 authors = ["Brendan Cazier <520246+cazier@users.noreply.github.com>"]
-packages = [ { include = "tmo" } ]
-
-[tool.poetry.scripts]
-tmo = "tmo.main:app"
+packages = [{include = "tmo"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -42,33 +57,23 @@ openpyxl = "^3.1.2"
 pytest = "^8.2.0"
 coverage = "^7.5.0"
 
-[tool.ruff]
-line-length = 120
 
-[tool.black]
-line-length = 120
-
-[tool.isort]
-line_length = 120
-profile = "black"
-
-[tool.mypy]
-explicit_package_bases = true
+[tool.poetry.scripts]
+tmo = "tmo.main:app"
 
 [tool.pylint."BASIC"]
 allowed-redefined-builtins = [
-    "id",
+  "id"
 ]
-
 good-names = [
-    "_Base_Model",
-    "_Subscriber_Bill_Link",
+  "_Base_Model",
+  "_Subscriber_Bill_Link"
 ]
 
 [tool.pylint."FORMAT"]
 max-line-length = 120
 disable = [
-    "missing-class-docstring",
-    "missing-module-docstring",
-    "missing-function-docstring",
+  "missing-class-docstring",
+  "missing-module-docstring",
+  "missing-function-docstring"
 ]
