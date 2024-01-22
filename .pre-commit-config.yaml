@@ -18,6 +18,7 @@ repos:
     rev: v0.23.1
     hooks:
       - id: toml-sort-fix
+        exclude: ^poetry.lock$
   - repo: local
     hooks:
       - id: mypy
