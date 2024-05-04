@@ -2092,7 +2092,10 @@ files = [
     {file = "websockets-12.0.tar.gz", hash = "sha256:81df9cbcbb6c260de1e007e58c011bfebe2dafc8435107b0537f393dd38c8b1b"},
 ]
 
+[extras]
+sqlmodel = ["pygments", "shandy-sqlfmt"]
+
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "880052234dbcd2d69f464dad3f7b3f906bac8023b55705aa280529211e28964a"
+content-hash = "76d7408868eb75d5c08652f090acac201abca8a8301d38483675e3e37cf8c71a"

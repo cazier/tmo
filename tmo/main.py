@@ -60,12 +60,17 @@ def playground(db: Annotated[Optional[pathlib.Path], typer.Option(help="Path to 
 
 @app.command()
 def info() -> None:
-    import rich
-
     from tmo import __version__
 
-    rich.print("[bold underline2 blue]T-Mobile Bills[/]")
-    rich.print(f" [green]v{__version__.MAJOR}.{__version__.MINOR}.{__version__.PATCH}")
+    try:
+        from rich import print
+
+        print("[bold underline2 blue]T-Mobile Bills[/]")
+        print(f" [green]v{__version__.MAJOR}.{__version__.MINOR}.{__version__.PATCH}")
+
+    except ImportError:
+        print("T-Mobile Bills")
+        print(f" v{__version__.MAJOR}.{__version__.MINOR}.{__version__.PATCH}")
 
 
 if __name__ == "__main__":
