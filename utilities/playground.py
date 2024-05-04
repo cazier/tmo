@@ -1,27 +1,29 @@
-from sqlalchemy.orm.mapper import Mapper
-from sqlalchemy import Connection, select as sa_select
-from sqlalchemy.orm import column_property, declared_attr, aliased, LoaderCallableStatus, attributes
-from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy import ColumnElement, Integer, event, Float
-from sqlmodel import SQLModel, create_engine, Session, Field, Relationship, select, func, type_coerce
-from pydantic import ConfigDict, BaseModel
-from tmo.db.highlight import LOGGER_NAME, SqlHandler
 import decimal
-
-from rich import print as pprint
-import IPython
-
-import typing
-import logging
 import itertools
+import logging
+import typing
+
+import IPython
+from pydantic import BaseModel, ConfigDict
+from rich import print as pprint
+from sqlalchemy import ColumnElement, Connection, Float, Integer, event
+from sqlalchemy import select as sa_select
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import LoaderCallableStatus, aliased, attributes, column_property, declared_attr
+from sqlalchemy.orm.mapper import Mapper
+from sqlmodel import Field, Relationship, Session, SQLModel, create_engine, func, select, type_coerce
+
+from tmo.db.highlight import attach_handler
 
 logging.basicConfig()
-logging.getLogger(LOGGER_NAME).addHandler(SqlHandler())
+attach_handler()
 
 _T = typing.TypeVar("_T")
 
+
 def print(*objects, **kwargs):
-    return pprint('>>>', *objects, **kwargs)
+    return pprint(">>>", *objects, **kwargs)
+
 
 class _CanStepThroughFields(SQLModel):
     @typing.overload
@@ -69,7 +71,7 @@ class Charge(SQLModel, table=True):
 
 
 class Detail(_CanStepThroughFields, SQLModel, table=True):
-    model_config = ConfigDict(ignored_types=(declared_attr,hybrid_property))
+    model_config = ConfigDict(ignored_types=(declared_attr, hybrid_property))
     id: typing.Optional[int] = Field(default=None, primary_key=True)
     phone: typing.Annotated[int, "$"] = Field(default=0)
     line: typing.Annotated[decimal.Decimal, "$"] = Field(default=0, max_digits=5, decimal_places=2)
@@ -93,18 +95,17 @@ class Bill(SQLModel, table=True):
 
     id: typing.Optional[int] = Field(default=None, primary_key=True)
 
-    total: decimal.Decimal =  Field(default=0, decimal_places=2, max_digits=8)
+    total: decimal.Decimal = Field(default=0, decimal_places=2, max_digits=8)
     # total: typing.ClassVar[decimal.Decimal] = hybrid_property(lambda k:sum(detail.total for detail in k.details) + sum(charge.total for charge in k.charges) )
 
     # @hybrid_property
     # def total(self) -> decimal.Decimal:
     #     return sum(detail.total for detail in self.details) + sum(charge.total for charge in self.charges)
-    
+
     # @total.inplace.expression
     # @classmethod
     # def _total_expression(cls) -> ColumnElement[decimal.Decimal]:
     #     return type_coerce(func.sum(cls.details.total, cls.id == Detail.bill_id), Float)
-
 
     users: list["User"] = Relationship(back_populates="bills", link_model=_User_Bill_Link)
     details: list["Detail"] = Relationship(back_populates="bill")
@@ -132,7 +133,7 @@ class Bill(SQLModel, table=True):
 #     if isinstance(target, Charge):
 #         return
 
-    # target.total = value + sum(getattr(target, name) or 0 for name, _ in target._fields_by_annotation(string='$'))
+# target.total = value + sum(getattr(target, name) or 0 for name, _ in target._fields_by_annotation(string='$'))
 
 # @event.listens_for(Session, 'before_flush')
 # def receive_before_flush(session, flush_context, instances):
@@ -184,11 +185,11 @@ def _models():
         # print(detail2)
         # print(detail2.total)
         # print(charges)
-        print('pause')
+        print("pause")
         print(select(bill.total))
         # print(bill.total)
         return
-    
+
         detail1.line = 92.0
         charges.total += 15
 
