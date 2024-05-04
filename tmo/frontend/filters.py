@@ -71,9 +71,9 @@ def _split(string: str) -> str:
 
 def currency_class(value: int | float) -> str:
     if value < 0:
-        return " is-currency-negative"
+        return "is-currency-negative"
 
     if value == 0:
-        return " is-currency-zero"
+        return "is-currency-zero"
 
     return ""

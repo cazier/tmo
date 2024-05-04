@@ -48,13 +48,11 @@ def attach_handler() -> None:
 
 
 @typing.overload
-def db_print(values: typing.Any, capture: typing.Literal[True], **kwargs: typing.Any) -> str:
-    ...
+def db_print(values: typing.Any, capture: typing.Literal[True], **kwargs: typing.Any) -> str: ...  # pragma: nocover
 
 
 @typing.overload
-def db_print(values: typing.Any, capture: typing.Literal[False], **kwargs: typing.Any) -> None:
-    ...
+def db_print(values: typing.Any, capture: typing.Literal[False], **kwargs: typing.Any) -> None: ...  # pragma: nocover
 
 
 def db_print(values: typing.Any, capture: bool = False, **kwargs: typing.Any) -> None | str:
@@ -63,6 +61,10 @@ def db_print(values: typing.Any, capture: bool = False, **kwargs: typing.Any) ->
 
     Args:
         values (typing.Any): database statements
+        capture (bool, optional): capture and return the colored/formatted values Defaults to False.
+
+    Returns:
+        str | None: captured pretty values (if `capture` is set to True)
     """
     if not isinstance(values, str):
         values = str(values)
@@ -99,6 +101,6 @@ class _SqlHandler(logging.StreamHandler[typing.TextIO]):  # pylint: disable=too-
                 record.msg = record.args[-1]
                 record.args = tuple()
 
-        record.msg = db_print(record.msg, capture=True, end="")
+        record.msg = db_print(record.msg, capture=True).rstrip()
 
         super().emit(record)
