@@ -1,34 +1,33 @@
+import contextlib
 import pathlib
-import tomllib
 import typing
 
-from pydantic import BaseModel, Field, IPvAnyAddress, field_validator
-
-_file = pathlib.Path.cwd().joinpath("config.toml")
-_config = tomllib.loads(_file.read_text(encoding="utf8"))
-
-database: dict[str, str | bool | None] = _config["database"]
-
-load: dict[str, dict[str, str]] = _config["load"]
-
-api: dict[str, bool] = _config["api"]
-frontend: dict[str, dict[str, str | list[str]]] = _config["frontend"]
-
-convert: dict[str, dict[str, str]] = _config["convert"]
+from pydantic import BaseModel, ConfigDict, Field, IPvAnyAddress, PrivateAttr, field_validator, model_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class _Database(BaseModel):
-    dialect: typing.Literal["sqlite", "postgres"]
-    path: pathlib.Path
+class Sqlite(BaseModel, validate_assignment=True):
+    dialect: typing.Literal["memory", "sqlite"]
     echo: bool = False
     clear: bool = False
 
-    def keys(self) -> typing.Iterator[str]:
-        # TODO: Implement **kwarg methods
-        return self.model_fields.keys()
+    path: pathlib.Path | None = None
 
 
-class _Load(BaseModel):
+class Postgres(BaseModel, validate_assignment=True):
+    dialect: typing.Literal["postgres"]
+    echo: bool = False
+    clear: bool = False
+
+    username: str
+    password: str
+    database: str
+    host: str
+    port: int
+
+
+class Load(BaseModel, validate_assignment=True):
+    numbers: dict[str, str] = Field(default_factory=dict)
     names: dict[typing.Literal["default"] | str, str] = Field(default_factory=dict)
 
     @field_validator("names", mode="before")
@@ -40,7 +39,7 @@ class _Load(BaseModel):
         return values
 
 
-class _Frontend(BaseModel):
+class Frontend(BaseModel, validate_assignment=True):
     colors: dict[str, str] = Field(default_factory=dict)
     dependents: dict[str, list[str]] = Field(default_factory=dict)
 
@@ -66,32 +65,32 @@ class _Frontend(BaseModel):
         return values
 
 
-class _Api(BaseModel):
+class Api(BaseModel, validate_assignment=True):
     debug: bool = False
     port: int = 8000
     host: IPvAnyAddress = Field(default="0.0.0.0", validate_default=True)
 
 
-class Config(BaseModel):
-    database: _Database
-    load: _Load = Field(default_factory=_Load)
-    frontend: _Frontend = Field(default_factory=_Frontend)
-    api: _Api = Field(default_factory=_Api)
+class _Config(BaseSettings):
+    model_config = SettingsConfigDict(env_nested_delimiter="__", env_prefix="TMO_")
+
+    database: Sqlite | Postgres = Field(default_factory=Sqlite)
+    load: Load = Field(default_factory=Load)
+    frontend: Frontend = Field(default_factory=Frontend)
+    api: Api = Field(default_factory=Api)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _database(cls, data: dict[str, dict[str, typing.Any]] | None = None):
+        # TODO: it's annoying to have to set this here manually instead of pydantic managing it all
+        if not data:
+            data = {"database": {"dialect": "sqlite"}}
+        if "database" in data:
+            data["database"].setdefault("dialect", "sqlite")
+        return data
 
     @classmethod
-    def from_file(cls, path: pathlib.Path | str) -> "Config":
-        """Load configuration data from a file (there is support for toml and json files) and initialize a
-        config object.
-
-        Args:
-            path (pathlib.Path | str): path to the file
-
-        Raises:
-            TypeError: If the file type cannot be automatically determined or is not supported.
-
-        Returns:
-            Config: An instance of the Config class containing the loaded configuration data
-        """
+    def from_file(cls, path: pathlib.Path | str) -> typing.Self:
         if isinstance(path, str):
             path = pathlib.Path(path).resolve()
 
@@ -110,3 +109,50 @@ class Config(BaseModel):
                 raise TypeError("Could not automatically determine the input file type")
 
         return cls.model_validate(parse(path.read_text(encoding="utf8")))
+
+
+class Config(_Config):
+    model_config = ConfigDict(frozen=True)
+    _data: _Config = PrivateAttr(default_factory=_Config)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._data = self.model_copy(deep=True)
+
+    def __getattribute__(self, key: str):
+        if key in super().model_fields or key == "model_dump":
+            return object.__getattribute__(self._data, key)
+
+        return object.__getattribute__(self, key)
+
+    def __repr__(self) -> str:
+        fields = ", ".join(f"{field}={repr(getattr(self, field))}" for field in self.model_fields)
+        return f"Config({fields})"
+
+    def __str__(self) -> str:
+        return self.__repr__()
+
+    def __rich__(self) -> str:
+        return self.__repr__()
+
+    def from_file(self, path: pathlib.Path | str | None = None) -> typing.Self:
+        __doc__ = _Config.__doc__
+
+        # THIS IS REAL HACKY, but lets us use this as a classmethod as well as an instancemethod...
+        if path is None:
+            return Config().from_file(self)
+
+        self._data = super().from_file(path)
+        return self
+
+    @contextlib.contextmanager
+    def patch(self, **patches: dict[str, typing.Any]) -> typing.Generator[typing.Self, None, None]:
+        original = self._data.model_dump(mode="json")
+        self._data = super().model_validate({**original, **patches})
+
+        yield
+
+        self._data = super().model_validate(original, strict=True)
+
+
+config = Config()
