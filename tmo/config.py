@@ -2,8 +2,12 @@ import contextlib
 import pathlib
 import typing
 
-from pydantic import BaseModel, ConfigDict, Field, IPvAnyAddress, PrivateAttr, field_validator, model_validator
+from pydantic import BaseModel, Field, IPvAnyAddress, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from .lib.sentinel import Sentinel
+
+T = typing.TypeVar("T", bound=dict[str, typing.Any])
 
 
 class Sqlite(BaseModel, validate_assignment=True):
@@ -32,7 +36,7 @@ class Load(BaseModel, validate_assignment=True):
 
     @field_validator("names", mode="before")
     @classmethod
-    def check_names(cls, values: dict[str, str]):
+    def check_names(cls, values: T) -> T:
         if values and "default" not in values:
             raise ValueError("default must be supplied in the load-names map")
 
@@ -45,7 +49,7 @@ class Frontend(BaseModel, validate_assignment=True):
 
     @field_validator("colors", mode="before")
     @classmethod
-    def check_colors(cls, values: dict[str, str]) -> dict[str, str]:
+    def check_colors(cls, values: T) -> T:
         colors = set()
         for color in values.values():
             if color in colors:
@@ -57,7 +61,7 @@ class Frontend(BaseModel, validate_assignment=True):
 
     @field_validator("dependents", mode="before")
     @classmethod
-    def check_dependents(cls, values: dict[str, list[str]]) -> dict[str, list[str]]:
+    def check_dependents(cls, values: T) -> T:
         for payer, dependent in values.items():
             if payer not in dependent:
                 raise ValueError("The dependent list MUST include the payer themselves.")
@@ -71,7 +75,7 @@ class Api(BaseModel, validate_assignment=True):
     host: IPvAnyAddress = Field(default="0.0.0.0", validate_default=True)
 
 
-class _Config(BaseSettings):
+class Config(Sentinel, BaseSettings):
     model_config = SettingsConfigDict(env_nested_delimiter="__", env_prefix="TMO_")
 
     database: Sqlite | Postgres = Field(default_factory=Sqlite)
@@ -81,9 +85,9 @@ class _Config(BaseSettings):
 
     @model_validator(mode="before")
     @classmethod
-    def _database(cls, data: dict[str, dict[str, typing.Any]] | None = None):
+    def _database(cls, data: T | None = None) -> T:
         # TODO: it's annoying to have to set this here manually instead of pydantic managing it all
-        if not data:
+        if data is None:
             data = {"database": {"dialect": "sqlite"}}
         if "database" in data:
             data["database"].setdefault("dialect", "sqlite")
@@ -110,49 +114,32 @@ class _Config(BaseSettings):
 
         return cls.model_validate(parse(path.read_text(encoding="utf8")))
 
+    @staticmethod
+    def _nested_merge(original: T, update: T) -> T:
+        def _recurse(combined, new, _return=True):  # type: ignore
+            for key, value in new.items():
+                if isinstance(value, dict):
+                    _recurse(combined.setdefault(key, {}), value, _return=False)  # type: ignore
+                else:
+                    combined[key] = value
 
-class Config(_Config):
-    model_config = ConfigDict(frozen=True)
-    _data: _Config = PrivateAttr(default_factory=_Config)
+            if _return:
+                return combined
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._data = self.model_copy(deep=True)
+            return
 
-    def __getattribute__(self, key: str):
-        if key in super().model_fields or key == "model_dump":
-            return object.__getattribute__(self._data, key)
-
-        return object.__getattribute__(self, key)
-
-    def __repr__(self) -> str:
-        fields = ", ".join(f"{field}={repr(getattr(self, field))}" for field in self.model_fields)
-        return f"Config({fields})"
-
-    def __str__(self) -> str:
-        return self.__repr__()
-
-    def __rich__(self) -> str:
-        return self.__repr__()
-
-    def from_file(self, path: pathlib.Path | str | None = None) -> typing.Self:
-        __doc__ = _Config.__doc__
-
-        # THIS IS REAL HACKY, but lets us use this as a classmethod as well as an instancemethod...
-        if path is None:
-            return Config().from_file(self)
-
-        self._data = super().from_file(path)
-        return self
+        return _recurse(_recurse({}, original), update)  # type: ignore
 
     @contextlib.contextmanager
-    def patch(self, **patches: dict[str, typing.Any]) -> typing.Generator[typing.Self, None, None]:
-        original = self._data.model_dump(mode="json")
-        self._data = super().model_validate({**original, **patches})
+    def patch(self, **patches: dict[str, typing.Any]) -> typing.Generator[None, None, None]:
+        original = self.model_dump(mode="json")
+        with self.update_self():
+            self.model_validate(self._nested_merge(original, patches))
 
         yield
 
-        self._data = super().model_validate(original, strict=True)
+        with self.update_self():
+            self.model_validate(original, strict=True)
 
 
 config = Config()
