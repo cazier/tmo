@@ -2,16 +2,16 @@ import contextlib
 import pathlib
 import typing
 
-from pydantic import BaseModel, Field, IPvAnyAddress, field_validator, model_validator
+from pydantic import BaseModel, Field, IPvAnyAddress, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from .lib.sentinel import Sentinel
 
-T = typing.TypeVar("T", bound=dict[str, typing.Any])
+T = dict[str, "T"]
 
 
 class Sqlite(BaseModel, validate_assignment=True):
-    dialect: typing.Literal["memory", "sqlite"]
+    dialect: typing.Literal["memory", "sqlite"] = "memory"
     echo: bool = False
     clear: bool = False
 
@@ -78,23 +78,14 @@ class Api(BaseModel, validate_assignment=True):
 class Config(Sentinel, BaseSettings):
     model_config = SettingsConfigDict(env_nested_delimiter="__", env_prefix="TMO_")
 
-    database: Sqlite | Postgres = Field(default_factory=Sqlite)
+    database: Sqlite | Postgres = Field(default_factory=Sqlite, discriminator="dialect")
     load: Load = Field(default_factory=Load)
     frontend: Frontend = Field(default_factory=Frontend)
     api: Api = Field(default_factory=Api)
 
-    @model_validator(mode="before")
-    @classmethod
-    def _database(cls, data: T | None = None) -> T:
-        # TODO: it's annoying to have to set this here manually instead of pydantic managing it all
-        if data is None:
-            data = {"database": {"dialect": "sqlite"}}
-        if "database" in data:
-            data["database"].setdefault("dialect", "sqlite")
-        return data
-
     @classmethod
     def from_file(cls, path: pathlib.Path | str) -> typing.Self:
+        # pylint: disable=import-outside-toplevel
         if isinstance(path, str):
             path = pathlib.Path(path).resolve()
 
@@ -116,19 +107,17 @@ class Config(Sentinel, BaseSettings):
 
     @staticmethod
     def _nested_merge(original: T, update: T) -> T:
-        def _recurse(combined, new, _return=True):  # type: ignore
+        def _recurse(combined: T, new: T) -> None:
             for key, value in new.items():
                 if isinstance(value, dict):
-                    _recurse(combined.setdefault(key, {}), value, _return=False)  # type: ignore
+                    _recurse(combined=combined.setdefault(key, {}), new=value)
                 else:
                     combined[key] = value
 
-            if _return:
-                return combined
-
-            return
-
-        return _recurse(_recurse({}, original), update)  # type: ignore
+        result: T = {}
+        _recurse(result, original)
+        _recurse(result, update)
+        return result
 
     @contextlib.contextmanager
     def patch(self, **patches: dict[str, typing.Any]) -> typing.Generator[None, None, None]:
