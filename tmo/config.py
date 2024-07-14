@@ -3,8 +3,7 @@ import pathlib
 import typing
 
 from pydantic import BaseModel, Field, IPvAnyAddress, field_validator, model_validator
-from pydantic.fields import FieldInfo
-from pydantic_settings import BaseSettings, EnvSettingsSource, PydanticBaseSettingsSource, SettingsConfigDict
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from .lib.sentinel import Sentinel
 
@@ -25,18 +24,25 @@ def merge_dict(original: T, update: T) -> T:
     return result
 
 
-class Sqlite(BaseModel, validate_assignment=True):
-    dialect: typing.Literal["memory", "sqlite"]
+class _Databases(BaseModel, validate_assignment=True):
     echo: bool = False
     clear: bool = False
 
-    path: pathlib.Path | None = None
+
+class Sqlite(_Databases):
+    dialect: typing.Literal["sqlite"] = "sqlite"
+
+    path: pathlib.Path
 
 
-class Postgres(BaseModel, validate_assignment=True):
-    dialect: typing.Literal["postgres"]
-    echo: bool = False
-    clear: bool = False
+class Memory(_Databases):
+    dialect: typing.Literal["memory"] = "memory"
+
+    path: None = None
+
+
+class Postgres(_Databases):
+    dialect: typing.Literal["postgres"] = "postgres"
 
     username: str
     password: str
@@ -90,39 +96,21 @@ class Api(BaseModel, validate_assignment=True):
     host: IPvAnyAddress = Field(default="0.0.0.0", validate_default=True)
 
 
-class CustomEnvSource(EnvSettingsSource):
-    def explode_env_vars(
-        self, field_name: str, field: FieldInfo, env_vars: typing.Mapping[str, str | None]
-    ) -> dict[str, typing.Any]:
-        data = super().explode_env_vars(field_name, field, env_vars)
-        data.setdefault("database", {})
-        data["database"].setdefault("dialect", "memory")
-        return data
-
-
 class Config(Sentinel, BaseSettings):
     model_config = SettingsConfigDict(env_nested_delimiter="__", env_prefix="TMO_")
 
-    database: Sqlite | Postgres = Field(discriminator="dialect")
+    database: Memory | Sqlite | Postgres = Field(default=Memory(), discriminator="dialect")
     load: Load = Field(default_factory=Load)
     frontend: Frontend = Field(default_factory=Frontend)
     api: Api = Field(default_factory=Api)
 
+    @model_validator(mode="before")
     @classmethod
-    def settings_customise_sources(cls, settings_cls: type[BaseSettings], **kwargs) -> tuple[PydanticBaseSettingsSource, ...]:
-        kwargs["env_settings"] = CustomEnvSource(settings_cls)
-        return super().settings_customise_sources(settings_cls, **kwargs)
+    def _database(cls, data: T | typing.Any) -> T:
+        if not data:
+            data = {"database": {"dialect": "memory"}}
 
-    # @model_validator(mode='before')
-    # @classmethod
-    # def _database(cls, data: T | typing.Any) -> T:
-    #     breakpoint()
-    #     if isinstance(data, dict):
-    #         data.setdefault('database', {})
-    #         data['database'].setdefault('dialect', 'memory')
-    #         return data
-
-    #     raise NotImplementedError("Implementing config is currently only possible from a dictionary/JSON object.")
+        return data
 
     @classmethod
     def from_file(cls, path: pathlib.Path | str) -> typing.Self:
@@ -158,4 +146,4 @@ class Config(Sentinel, BaseSettings):
             self.model_validate(original, strict=True)
 
 
-config = None  # Config()
+config = None  # pylint: disable=invalid-name
