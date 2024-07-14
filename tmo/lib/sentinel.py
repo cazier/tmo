@@ -25,7 +25,7 @@ class Sentinel(pydantic.BaseModel):
 
         super().__init__(*args, **kwargs)
 
-        if _update_self:
+        if _update_self or _sentinel is None:
             _sentinel = self.model_copy(deep=True)
 
         _update_self = False
@@ -51,3 +51,10 @@ class Sentinel(pydantic.BaseModel):
 
     def __rich__(self) -> str:
         return self.__repr__()
+
+    @staticmethod
+    def purge_sentinel() -> None:
+        global _sentinel, _update_self
+
+        _sentinel = None
+        _update_self = True
