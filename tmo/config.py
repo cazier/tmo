@@ -2,16 +2,31 @@ import contextlib
 import pathlib
 import typing
 
-from pydantic import BaseModel, Field, IPvAnyAddress, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import BaseModel, Field, IPvAnyAddress, field_validator, model_validator
+from pydantic.fields import FieldInfo
+from pydantic_settings import BaseSettings, EnvSettingsSource, PydanticBaseSettingsSource, SettingsConfigDict
 
 from .lib.sentinel import Sentinel
 
 T = dict[str, "T"]
 
 
+def merge_dict(original: T, update: T) -> T:
+    def _recurse(combined: T, new: T) -> None:
+        for key, value in new.items():
+            if isinstance(value, dict):
+                _recurse(combined=combined.setdefault(key, {}), new=value)
+            else:
+                combined[key] = value
+
+    result: T = {}
+    _recurse(result, original)
+    _recurse(result, update)
+    return result
+
+
 class Sqlite(BaseModel, validate_assignment=True):
-    dialect: typing.Literal["memory", "sqlite"] = "memory"
+    dialect: typing.Literal["memory", "sqlite"]
     echo: bool = False
     clear: bool = False
 
@@ -75,13 +90,39 @@ class Api(BaseModel, validate_assignment=True):
     host: IPvAnyAddress = Field(default="0.0.0.0", validate_default=True)
 
 
+class CustomEnvSource(EnvSettingsSource):
+    def explode_env_vars(
+        self, field_name: str, field: FieldInfo, env_vars: typing.Mapping[str, str | None]
+    ) -> dict[str, typing.Any]:
+        data = super().explode_env_vars(field_name, field, env_vars)
+        data.setdefault("database", {})
+        data["database"].setdefault("dialect", "memory")
+        return data
+
+
 class Config(Sentinel, BaseSettings):
     model_config = SettingsConfigDict(env_nested_delimiter="__", env_prefix="TMO_")
 
-    database: Sqlite | Postgres = Field(default_factory=Sqlite, discriminator="dialect")
+    database: Sqlite | Postgres = Field(discriminator="dialect")
     load: Load = Field(default_factory=Load)
     frontend: Frontend = Field(default_factory=Frontend)
     api: Api = Field(default_factory=Api)
+
+    @classmethod
+    def settings_customise_sources(cls, settings_cls: type[BaseSettings], **kwargs) -> tuple[PydanticBaseSettingsSource, ...]:
+        kwargs["env_settings"] = CustomEnvSource(settings_cls)
+        return super().settings_customise_sources(settings_cls, **kwargs)
+
+    # @model_validator(mode='before')
+    # @classmethod
+    # def _database(cls, data: T | typing.Any) -> T:
+    #     breakpoint()
+    #     if isinstance(data, dict):
+    #         data.setdefault('database', {})
+    #         data['database'].setdefault('dialect', 'memory')
+    #         return data
+
+    #     raise NotImplementedError("Implementing config is currently only possible from a dictionary/JSON object.")
 
     @classmethod
     def from_file(cls, path: pathlib.Path | str) -> typing.Self:
@@ -105,25 +146,11 @@ class Config(Sentinel, BaseSettings):
 
         return cls.model_validate(parse(path.read_text(encoding="utf8")))
 
-    @staticmethod
-    def _nested_merge(original: T, update: T) -> T:
-        def _recurse(combined: T, new: T) -> None:
-            for key, value in new.items():
-                if isinstance(value, dict):
-                    _recurse(combined=combined.setdefault(key, {}), new=value)
-                else:
-                    combined[key] = value
-
-        result: T = {}
-        _recurse(result, original)
-        _recurse(result, update)
-        return result
-
     @contextlib.contextmanager
     def patch(self, **patches: dict[str, typing.Any]) -> typing.Generator[None, None, None]:
         original = self.model_dump(mode="json")
         with self.update_self():
-            self.model_validate(self._nested_merge(original, patches))
+            self.model_validate(merge_dict(original, patches))
 
         yield
 
@@ -131,4 +158,4 @@ class Config(Sentinel, BaseSettings):
             self.model_validate(original, strict=True)
 
 
-config = Config()
+config = None  # Config()
