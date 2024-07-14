@@ -2159,4 +2159,4 @@ sqlmodel = ["pygments", "shandy-sqlfmt"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "3832e29e13fd2e5c433f4c4546faa43a35f8453f7d06095d48b31e3fd666574e"
+content-hash = "723a37dabd3803bdac3903ac5aca13af71d3b39773559d137cc5f37798422c88"
