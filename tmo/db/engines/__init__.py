@@ -1,8 +1,10 @@
 import logging
+import sys
 
 from sqlmodel import SQLModel
 
-from tmo.config import database
+from tmo import config
+from tmo.config import Memory, Postgres, Sqlite
 from tmo.db.highlight import attach_handler
 from tmo.db.models import Bill, BillSubscriberLink, Charge, Detail, Subscriber
 
@@ -11,24 +13,21 @@ from ._sqlite import init as _init_sqlite
 
 logging.basicConfig()
 
-match database.pop("dialect"):
-    case "sqlite":
-        engine = _init_sqlite(**database)  # type: ignore[arg-type]
+match config.database:
+    case Sqlite() | Memory():
+        engine = _init_sqlite(config.database)
 
-    case "postgres":
-        engine = _init_postgres(**database)  # type: ignore[arg-type]
+    case Postgres():
+        engine = _init_postgres(config.database)
 
     case _:
-        import sys
-
+        logging.getLogger("uvicorn.error").error("Could not match the database type: %s", type(config.database))
         sys.exit(1)
 
-if database.get("echo"):
+if config.database.echo:
     logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
     attach_handler()
 
-# This just exists to prevent linters from removing unused imports
-# pylint: disable-next=pointless-statement
-(Bill, BillSubscriberLink, Charge, Detail, Subscriber)
-
 SQLModel.metadata.create_all(engine)
+
+__all__ = ["Bill", "BillSubscriberLink", "Charge", "Detail", "Subscriber", "engine"]

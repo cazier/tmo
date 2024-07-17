@@ -1,23 +1,21 @@
 import pathlib
-import typing
 
 from sqlalchemy import Engine
 from sqlmodel import create_engine
 
+from tmo.config import Memory, Sqlite
 
-def init(*, path: str | None = None, memory: bool = False, clear: bool = False, **_: typing.Any) -> Engine:
-    if bool(path) == memory:
-        raise RuntimeError("Cannot create a sqlite database in memory AND at a specific path.")
 
+def init(config: Sqlite | Memory) -> Engine:
     url = "sqlite://"
 
-    if path:
-        _path = pathlib.Path.cwd().joinpath(path)
+    if config.path:
+        path = pathlib.Path.cwd().joinpath(config.path)
 
-        if clear:
-            _path.unlink(missing_ok=True)
+        if config.clear:
+            path.unlink(missing_ok=True)
 
-        url = f"{url}/{_path.resolve()}"
+        url = f"{url}/{path.resolve()}"
 
     engine = create_engine(url)
 

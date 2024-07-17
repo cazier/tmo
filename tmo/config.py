@@ -107,8 +107,12 @@ class Config(Sentinel, BaseSettings):
     @model_validator(mode="before")
     @classmethod
     def _database(cls, data: T | typing.Any) -> T:
+        # TODO, this continues to get squirrely...
         if not data:
             data = {"database": {"dialect": "memory"}}
+
+        if data["database"].get("dialect") != "postgres" and data["database"].get("path") is not None:
+            data["database"]["dialect"] = "sqlite"  # type: ignore[assignment]
 
         return data
 
@@ -132,18 +136,19 @@ class Config(Sentinel, BaseSettings):
             case _:
                 raise TypeError("Could not automatically determine the input file type")
 
-        return cls.model_validate(parse(path.read_text(encoding="utf8")))
+        with cls.update_sentinel():
+            return cls.model_validate(parse(path.read_text(encoding="utf8")))
 
     @contextlib.contextmanager
     def patch(self, **patches: dict[str, typing.Any]) -> typing.Generator[None, None, None]:
         original = self.model_dump(mode="json")
-        with self.update_self():
+        with self.update_sentinel():
             self.model_validate(merge_dict(original, patches))
 
         yield
 
-        with self.update_self():
+        with self.update_sentinel():
             self.model_validate(original, strict=True)
 
 
-config = None  # pylint: disable=invalid-name
+config = Config()  # pylint: disable=invalid-name

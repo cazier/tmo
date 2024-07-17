@@ -3,7 +3,7 @@ import typing
 
 import pydantic
 
-_update_self = True  # pylint: disable=invalid-name
+_UPDATE_SENTINEL = True
 _sentinel: typing.Optional["Sentinel"] = None
 
 P = typing.ParamSpec("P")
@@ -11,24 +11,15 @@ P = typing.ParamSpec("P")
 
 class Sentinel(pydantic.BaseModel):
     # pylint: disable=global-statement
-    @staticmethod
-    @contextlib.contextmanager
-    def update_self() -> typing.Generator[None, None, None]:
-        global _update_self
-
-        _update_self = True
-        yield
-        _update_self = False
-
     def __init__(self, *args: P.args, **kwargs: P.kwargs):
-        global _update_self, _sentinel
+        global _UPDATE_SENTINEL, _sentinel
 
         super().__init__(*args, **kwargs)
 
-        if _update_self or _sentinel is None:
+        if _UPDATE_SENTINEL or _sentinel is None:
             _sentinel = self.model_copy(deep=True)
 
-        _update_self = False
+        _UPDATE_SENTINEL = False
 
     def __getattribute__(self, name: str) -> typing.Any:
         if name in "model_fields" or name not in type(self).model_fields:
@@ -53,8 +44,17 @@ class Sentinel(pydantic.BaseModel):
         return self.__repr__()
 
     @staticmethod
+    @contextlib.contextmanager
+    def update_sentinel() -> typing.Generator[None, None, None]:
+        global _UPDATE_SENTINEL
+
+        _UPDATE_SENTINEL = True
+        yield
+        _UPDATE_SENTINEL = False
+
+    @staticmethod
     def purge_sentinel() -> None:
-        global _sentinel, _update_self
+        global _sentinel, _UPDATE_SENTINEL
 
         _sentinel = None
-        _update_self = True
+        _UPDATE_SENTINEL = True
