@@ -7,36 +7,24 @@ try:
     from pygments.formatters.terminal256 import Terminal256Formatter
     from pygments.lexers.sql import SqlLexer
 
-except ImportError:  # pragma: nocover
-    # pylint: disable=invalid-name
+except ImportError:
     logger = logging.getLogger("uvicorn")
     logger.warning("Install the `pygments` package to colorize SQL queries.")
 
-    def highlight(value: typing.Any) -> str:  # type: ignore[no-redef]
-        """Optional def if the pygments package is not available."""
-        return str(value)
-
-    def Terminal256Formatter() -> None:  # type: ignore[no-redef]
-        """Optional def if the pygments package is not available."""
-        return None
-
-    def SqlLexer() -> None:  # type: ignore[no-redef]
-        """Optional def if the pygments package is not available."""
-        return None
-
+    from .highlight_fallback import SqlLexer, Terminal256Formatter, highlight  # type: ignore[no-redef,assignment]
 
 try:
     from sqlfmt.api import Mode, format_string
 
-    _mode = Mode(fast=True, no_color=True, no_progressbar=True)
+    _MODE = Mode(fast=True, no_color=True, no_progressbar=True)
 
-except ImportError:  # pragma: nocover
+except ImportError:
     logger = logging.getLogger("uvicorn")
     logger.warning("Install the `shandy-sqlfmt` package to format SQL queries.")
 
-    def format_string(source_string: str, mode: Mode) -> str:  # pylint: disable=unused-argument
-        """Optional def if the shandy-sqlfmt package is not available."""
-        return source_string
+    from .highlight_fallback import format_string
+
+    _MODE = None  # type: ignore[assignment]
 
 
 _LOGGER_NAME = "sqlalchemy.engine.Engine"
@@ -48,11 +36,18 @@ def attach_handler() -> None:
 
 
 @typing.overload
-def db_print(values: typing.Any, capture: typing.Literal[True], **kwargs: typing.Any) -> str: ...  # pragma: nocover
+def db_print(values: typing.Any, capture: typing.Literal[True], **kwargs: typing.Any) -> str:
+    ...
 
 
 @typing.overload
-def db_print(values: typing.Any, capture: typing.Literal[False], **kwargs: typing.Any) -> None: ...  # pragma: nocover
+def db_print(values: typing.Any, capture: typing.Literal[False], **kwargs: typing.Any) -> None:
+    ...
+
+
+@typing.overload
+def db_print(values: typing.Any, capture: bool = ..., **kwargs: typing.Any) -> None | str:
+    ...
 
 
 def db_print(values: typing.Any, capture: bool = False, **kwargs: typing.Any) -> None | str:
@@ -69,7 +64,7 @@ def db_print(values: typing.Any, capture: bool = False, **kwargs: typing.Any) ->
     if not isinstance(values, str):
         values = str(values)
 
-    formatted = highlight(format_string(values, mode=_mode), SqlLexer(), Terminal256Formatter())
+    formatted = highlight(format_string(values, mode=_MODE), SqlLexer(), Terminal256Formatter())
 
     if capture:
         return formatted

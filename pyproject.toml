@@ -57,6 +57,12 @@ dev-dependencies = [
 [tool.ruff]
 line-length = 120
 
+[tool.coverage.report]
+exclude_lines = [
+  "pragma: not covered",
+  "@typing.overload"
+]
+
 [tool.coverage.run]
 omit = [
   "utilities/*"
