@@ -33,8 +33,15 @@ def serve(
 
 
 @app.command("import")
-def import_from_json(path: Annotated[pathlib.Path, typer.Option(help="path to json file")]) -> None:
+def import_from_json(
+    path: Annotated[pathlib.Path, typer.Option(help="path to json file")],
+    config_file: Annotated[Optional[pathlib.Path], typer.Option("--config", help="Path to a config file")] = None,
+) -> None:
+    from tmo import Config
     from tmo.db.tools.json_import import run
+
+    if config_file:
+        Config.from_file(config_file)
 
     run(path)
 

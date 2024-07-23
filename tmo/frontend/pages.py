@@ -8,13 +8,12 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from httpx import AsyncClient
 
-from tmo.config import api as config
-from tmo.config import frontend
+from tmo import config
 from tmo.db.api import router as api
 from tmo.frontend.filters import currency_class, generate_charts, generate_table
 
 templates = Jinja2Templates(directory=pathlib.Path(__file__).parent.joinpath("templates"))
-templates.env.globals.update(domain="T-Mobile Bills", cdn=not config["debug"])
+templates.env.globals.update(domain="T-Mobile Bills", cdn=not config.api.debug)
 templates.env.filters.update(currency_class=currency_class)
 
 router = APIRouter(include_in_schema=False)
@@ -42,8 +41,8 @@ async def bill(*, year: Optional[int] = None, month: Optional[int] = None, reque
 
     current, previous = resp.json()
 
-    total, table = generate_table([current, previous], frontend.get("dependents", {}))
-    charts = generate_charts(current, frontend.get("colors", {}))
+    total, table = generate_table([current, previous], config.frontend.dependents)
+    charts = generate_charts(current, config.frontend.colors)
 
     return templates.TemplateResponse(
         request=request,

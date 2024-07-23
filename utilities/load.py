@@ -10,13 +10,13 @@ import openpyxl
 from openpyxl.workbook.workbook import Workbook
 from rich import print
 
-from tmo.config import convert as num_map
+from tmo import config
 
 data: dict[str, dict[str, dict[str, typing.Any]]] = {}
 max_row = 0
 num_name_map = {}
 
-num_fix_map = num_map.get("names", {})
+num_fix_map = config.load.names
 
 data = json.loads(pathlib.Path("bills.json").read_text())
 
