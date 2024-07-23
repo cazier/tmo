@@ -48,7 +48,7 @@ class Postgres(_Databases):
     password: str
     database: str
     host: str
-    port: int
+    port: int = 5432
 
 
 class Load(BaseModel, validate_assignment=True):

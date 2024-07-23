@@ -6,7 +6,7 @@ import typing
 from sqlmodel import Session
 
 from tmo.config import load
-from tmo.db.engines import engine
+from tmo.db.engines import start_engine
 from tmo.db.models import Bill, Charge, Detail, Subscriber
 
 
@@ -82,6 +82,8 @@ def _fill(session: Session, date: str | datetime.date, data: _Import) -> None:
 
 
 def run(path: pathlib.Path) -> None:
+    engine = start_engine()
+
     bills = _load(path)
 
     with Session(engine) as session:

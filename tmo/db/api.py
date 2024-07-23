@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import joinedload
 from sqlmodel import Session, and_, func, select
 
-from tmo.db.engines import engine
+from tmo.db.engines import start_engine
 from tmo.db.models import Bill, Detail, Subscriber
 from tmo.db.schemas import (
     BillRead,
@@ -16,6 +16,8 @@ from tmo.db.schemas import (
     SubscriberReadWithDetails,
     SubscribersRead,
 )
+
+engine = start_engine()
 
 
 def _session() -> Generator[Session, None, None]:

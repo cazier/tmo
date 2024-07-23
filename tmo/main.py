@@ -67,7 +67,10 @@ def playground(
             updates = {"dialect": "memory"}
 
     with config.patch(database=updates):
-        from tmo.db.engines import engine
+        from tmo.db.engines import start_engine
+
+        engine = start_engine()
+        breakpoint()
 
         with Session(engine) as session:
             IPython.embed(display_banner=False)  # type: ignore[no-untyped-call]

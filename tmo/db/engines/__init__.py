@@ -1,6 +1,7 @@
 import logging
 import sys
 
+from sqlalchemy import Engine
 from sqlmodel import SQLModel
 
 from tmo import config
@@ -13,21 +14,26 @@ from ._sqlite import init as _init_sqlite
 
 logging.basicConfig()
 
-match config.database:
-    case Sqlite() | Memory():
-        engine = _init_sqlite(config.database)
 
-    case Postgres():
-        engine = _init_postgres(config.database)
+def start_engine() -> Engine:
+    match config.database:
+        case Sqlite() | Memory():
+            engine = _init_sqlite(config.database)
 
-    case _:
-        logging.getLogger("uvicorn.error").error("Could not match the database type: %s", type(config.database))
-        sys.exit(1)
+        case Postgres():
+            engine = _init_postgres(config.database)
 
-if config.database.echo:
-    logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
-    attach_handler()
+        case _:
+            logging.getLogger("uvicorn.error").error("Could not match the database type: %s", type(config.database))
+            sys.exit(1)
 
-SQLModel.metadata.create_all(engine)
+    if config.database.echo:
+        logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
+        attach_handler()
 
-__all__ = ["Bill", "BillSubscriberLink", "Charge", "Detail", "Subscriber", "engine"]
+    SQLModel.metadata.create_all(engine)
+
+    return engine
+
+
+__all__ = ["Bill", "BillSubscriberLink", "Charge", "Detail", "Subscriber"]

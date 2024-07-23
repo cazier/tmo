@@ -6,7 +6,7 @@ from tmo.config import Postgres
 
 def init(config: Postgres) -> Engine:
     url = URL.create(
-        "psycopg",
+        "postgresql+psycopg",
         username=config.username,
         password=config.password,
         host=config.host,
