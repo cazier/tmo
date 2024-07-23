@@ -1,3 +1,6 @@
+# pylint: disable=redefined-outer-name,redefined-builtin,no-member
+# mypy: disable-error-code="no-untyped-def"
+
 import contextlib
 import json
 import pathlib
@@ -9,8 +12,6 @@ import pytest
 from faker import Faker
 
 from tmo.config import Config, Frontend, Load, Memory, Sqlite, T, merge_dict
-
-# pylint: disable=redefined-outer-name,redefined-builtin,no-member
 
 
 @pytest.fixture(autouse=True)
@@ -55,7 +56,7 @@ def dictionary(request: pytest.FixtureRequest, tmp_path: pathlib.Path, gen_data:
     ),
     ids=("no nesting", "nesting swapped", "nesting update", "partial update"),
 )
-def test_merge_dict(original: T, update: T, new: T) -> None:
+def test_merge_dict(original: T, update: T, new: T):
     assert merge_dict(original, update) == new
 
 
@@ -70,9 +71,7 @@ def test_merge_dict(original: T, update: T, new: T) -> None:
     indirect=["dictionary"],
     ids=("toml", "string", "json", "yaml"),
 )
-def test_from_file(
-    format: str, dictionary: dict[str, typing.Any], expectation: typing.Any, tmp_path: pathlib.Path
-) -> None:
+def test_from_file(format: str, dictionary: dict[str, typing.Any], expectation: typing.Any, tmp_path: pathlib.Path):
     with expectation:
         path = tmp_path.joinpath(f"config.{format}")
 
@@ -87,7 +86,7 @@ def test_from_file(
         assert dictionary == dump
 
 
-def test_from_environment_variables(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_from_environment_variables(monkeypatch: pytest.MonkeyPatch):
     with monkeypatch.context() as mp:
         mp.setenv("TMO_database__dialect", "sqlite")
         mp.setenv("TMO_database__path", "/dev/null")
@@ -98,14 +97,14 @@ def test_from_environment_variables(monkeypatch: pytest.MonkeyPatch) -> None:
         assert m.database.path.as_posix() == "/dev/null"
 
 
-def test_memory() -> None:
+def test_memory():
     m = Config(database={"dialect": "memory"})  # type: ignore[arg-type]
 
     assert isinstance(m.database, Memory)
     assert m.database.dialect == "memory" and m.database.path is None
 
 
-def test_patch() -> None:
+def test_patch():
     m = Config()
     assert m.api.port == 8000
     port = random.randint(1000, 60000)
@@ -115,11 +114,11 @@ def test_patch() -> None:
 
 
 class TestLoad:
-    def test_name_validation(self, faker: Faker) -> None:
+    def test_name_validation(self, faker: Faker):
         names = {faker.first_name(): faker.last_name() for _ in range(5)}
         Load.model_validate({"names": {"default": "default", **names}})
 
-    def test_name_validation_fails(self, faker: Faker) -> None:
+    def test_name_validation_fails(self, faker: Faker):
         with pytest.raises(ValueError):
             assert Load.model_validate({"names": {faker.first_name(): faker.last_name()}})
 
@@ -127,25 +126,25 @@ class TestLoad:
 class TestFrontend:
     size: int = 6
 
-    def test_color_validation(self, faker: Faker) -> None:
+    def test_color_validation(self, faker: Faker):
         colors = {faker.first_name(): faker.color() for _ in range(self.size)}
 
         assert Frontend.model_validate({"colors": colors})
 
-    def test_color_validation_fails(self, faker: Faker) -> None:
+    def test_color_validation_fails(self, faker: Faker):
         colors = {faker.first_name(): "#ffffff", faker.first_name(): "#ffffff"}
 
         with pytest.raises(ValueError, match="must be unique"):
             Frontend.model_validate({"colors": colors})
 
-    def test_dependent_validation(self, faker: Faker) -> None:
+    def test_dependent_validation(self, faker: Faker):
         dependents = {
             (name := faker.first_name()): [name] + [faker.first_name() for _ in range(self.size)],
             (name := faker.first_name()): [name],
         }
         assert Frontend.model_validate({"dependents": dependents})
 
-    def test_dependent_validation_fails(self, faker: Faker) -> None:
+    def test_dependent_validation_fails(self, faker: Faker):
         dependents = {faker.first_name(): [faker.first_name() for _ in range(self.size)]}
 
         with pytest.raises(ValueError):

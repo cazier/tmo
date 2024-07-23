@@ -115,10 +115,7 @@ class TestMissingImports:
     def test_import_catching(self, name: str, module: str, caplog: pytest.LogCaptureFixture):
         with unittest.mock.patch.dict(sys.modules):
             sys.modules[module] = None  # type: ignore[assignment]
-            if "tmo.db.highlight" in sys.modules:
-                importlib.reload(sys.modules["tmo.db.highlight"])
-            else:
-                importlib.import_module("tmo.db.highlight")
+            importlib.reload(sys.modules["tmo.db.highlight"])
 
         with caplog.at_level(logging.WARNING, "uvicorn"):
             assert f"Install the `{name}` package to" in caplog.text

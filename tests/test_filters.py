@@ -1,3 +1,6 @@
+# pylint: disable=protected-access
+# mypy: disable-error-code="no-untyped-def"
+
 import typing
 
 import pytest
