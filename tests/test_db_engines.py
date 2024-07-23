@@ -75,3 +75,21 @@ def test_adding_echo(capsys: pytest.CaptureFixture[str]):
     assert isinstance(logger.handlers[0], _SqlHandler)
     assert logger.parent and logger.parent.level == logging.INFO
     assert (out := capsys.readouterr()).out and not out.err
+
+
+def test_clearing_sqlite(tmp_path: pathlib.Path):
+    path = tmp_path.joinpath(secrets.token_hex())
+    assert not path.exists()
+
+    path.write_bytes(secrets.token_bytes())
+
+    stat = path.stat()
+    assert stat.st_size != 0
+
+    database = {"dialect": "sqlite", "path": path, "clear": True}
+
+    with config.patch(database=database):
+        engine = start_engine()
+        assert engine.url.database in (path, str(path))
+
+    assert stat.st_ctime_ns < path.stat().st_ctime_ns

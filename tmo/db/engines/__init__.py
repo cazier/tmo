@@ -27,6 +27,8 @@ def start_engine() -> Engine:
             logging.getLogger("uvicorn.error").error("Could not match the database type: %s", type(config.database))
             sys.exit(1)
 
+    logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
+
     if config.database.echo:
         logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
         attach_handler()
