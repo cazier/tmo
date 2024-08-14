@@ -159,7 +159,6 @@ async def _get_bill(session: Session, year: Optional[int], month: Optional[int],
     )
 
     if len(data) != 2:
-        # TODO this doesn't need to be an exception, but should create a bill with no previous data
         raise HTTPException(status_code=404, detail="No month data could be found")
 
     return data

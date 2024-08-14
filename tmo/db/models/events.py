@@ -2,7 +2,7 @@ import typing
 
 from sqlalchemy import event
 
-from . import Bill, Detail, Subscriber
+from . import Bill, Detail, Subscriber  # pylint: disable=cyclic-import
 
 
 @event.listens_for(Bill.charges, "append")

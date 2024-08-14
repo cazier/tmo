@@ -77,7 +77,6 @@ def playground(
         from tmo.db.engines import start_engine
 
         engine = start_engine()
-        breakpoint()
 
         with Session(engine) as session:
             IPython.embed(display_banner=False)  # type: ignore[no-untyped-call]
