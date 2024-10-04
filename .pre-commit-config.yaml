@@ -6,10 +6,11 @@ repos:
       - id: end-of-file-fixer
       - id: check-toml
       - id: check-added-large-files
-  - repo: https://github.com/psf/black
-    rev: 23.11.0
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
     hooks:
-      - id: black
+      - id: ruff
+      - id: ruff-format
   - repo: https://github.com/pycqa/isort
     rev: 5.12.0
     hooks:
@@ -22,9 +23,3 @@ repos:
         language: python
         types: [python]
         args: [--strict]
-      - id: pylint
-        name: pylint
-        entry: pylint
-        language: python
-        types: [python]
-        require_serial: true
