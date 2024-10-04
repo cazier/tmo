@@ -20,14 +20,7 @@ FIELDS: tuple[str, ...] = ("phone", "line", "insurance", "usage", "minutes", "me
 
 
 @pytest.fixture(autouse=True, scope="session")
-def _setup_database(subscribers: list[dict[str, str]], database: dict[str, typing.Any]):
-    def _months() -> set[datetime.date]:
-        def _get_date(year: int, month: int) -> datetime.date:
-            return datetime.date(year, month, random.randint(1, calendar.monthrange(year, month)[1]))
-
-        start = random.randint(2000, 2010)
-        return {_get_date(start + year, month) for month in range(1, 13) for year in range(YEARS)}
-
+def _setup_database(subscribers: list[dict[str, str]], bills: set[datetime.date], database: dict[str, typing.Any]):
     def _numbers() -> dict[str, int | float]:
         def _number(kind: str) -> int | float:
             match kind:
@@ -39,13 +32,22 @@ def _setup_database(subscribers: list[dict[str, str]], database: dict[str, typin
 
         return {key: _number(key) for key in FIELDS}
 
-    for month in _months():
+    for month in bills:
         database[month.strftime("%Y.%m.%d")] = {
             "subscribers": [{**subscriber, **_numbers()} for subscriber in subscribers],
             "other": {random.choices(SERVICES, [90, 10], k=1)[0]: random.randint(5, 10)},
         }
 
     yield
+
+
+@pytest.fixture(scope="session")
+def bills():
+    def _get_date(year: int, month: int) -> datetime.date:
+        return datetime.date(year, month, random.randint(1, calendar.monthrange(year, month)[1]))
+
+    start = random.randint(2000, 2010)
+    return {_get_date(start + year, month) for month in range(1, 13) for year in range(YEARS)}
 
 
 @pytest.fixture(scope="session")
