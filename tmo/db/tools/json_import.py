@@ -3,30 +3,37 @@ import json
 import pathlib
 import typing
 
+import pydantic
 from sqlmodel import Session
 
-from tmo.config import load
+from tmo import config
 from tmo.db.engines import start_engine
 from tmo.db.models import Bill, Charge, Detail, Subscriber
 
 
-class _SubscriberImport(typing.TypedDict):
+class _SubscriberImport(pydantic.BaseModel):
     name: str
     num: str
 
     minutes: int
     messages: int
-    data: float
+    data: decimal.Decimal
 
-    phone: float
-    line: float
-    insurance: float
-    usage: float
+    phone: decimal.Decimal
+    line: decimal.Decimal
+    insurance: decimal.Decimal
+    usage: decimal.Decimal
 
 
-class _Import(typing.TypedDict):
-    subscribers: _SubscriberImport
-    other: dict[str, float]
+class _Other(pydantic.BaseModel):
+    kind: str
+    value: decimal.Decimal
+
+
+class _Bill(pydantic.BaseModel):
+    date: datetime.date
+    subscribers: list[_SubscriberImport]
+    other: list[_Other] = pydantic.Field(default_factory=list)
 
 
 _bill_cache: dict[datetime.date, Bill] = {}
@@ -41,54 +48,49 @@ class _NameMap:  # pylint: disable=too-few-public-methods
         return self._names.get(key, self._names["default"])
 
 
-_name_map = _NameMap(load["names"])
+def _load(path: pathlib.Path) -> dict[str, dict[str, typing.Any]]:
+    return typing.cast(dict[str, dict[str, typing.Any]], json.loads(path.read_text(encoding="utf-8")))
 
 
-def _load(path: pathlib.Path) -> dict[str, _Import]:
-    return typing.cast(dict[str, _Import], json.loads(path.read_text(encoding="utf-8")))
+def _fill(session: Session, bill: _Bill) -> None:
+    _name_map = _NameMap(config.load.names)
+    _bill = _bill_cache.setdefault(bill.date, Bill(date=bill.date))
 
-
-def _fill(session: Session, date: str | datetime.date, data: _Import) -> None:
-    if isinstance(date, str):
-        date = datetime.date(*map(int, date.split(".")))
-
-    bill = _bill_cache.setdefault(date, Bill(date=date))
-
-    for kind, total in data["other"].items():
-        charge = Charge(name=kind, total=total, bill=bill)
+    for other in bill.other:
+        charge = Charge(name=other.kind, total=other.value, bill=_bill)
         session.add(charge)
 
-    for _data in data["subscribers"]:
-        surname = _name_map[_data["name"]]
-        name = _data["name"] + " " + surname
-        user = _user_cache.setdefault(_data["num"], Subscriber(name=name, number=_data["num"]))
-        user.bills.append(bill)
+    for _data in bill.subscribers:
+        surname = _name_map[_data.name]
+        name = _data.name + " " + surname
+        user = _user_cache.setdefault(_data.num, Subscriber(name=name, number=_data.num))
+        user.bills.append(_bill)
 
         detail = Detail(
-            bill=bill,
+            bill=_bill,
             subscriber=user,
-            phone=_data["phone"],
-            line=_data["line"],
-            insurance=_data["insurance"],
-            usage=_data["usage"],
-            minutes=_data["minutes"],
-            messages=_data["messages"],
-            data=_data["data"],
+            phone=_data.phone,
+            line=_data.line,
+            insurance=_data.insurance,
+            usage=_data.usage,
+            minutes=_data.minutes,
+            messages=_data.messages,
+            data=_data.data,
         )
         session.add(detail)
 
-    session.add(bill)
+    session.add(_bill)
     session.add(user)
 
 
 def run(path: pathlib.Path) -> None:
     engine = start_engine()
 
-    bills = _load(path)
+    bills = pydantic.TypeAdapter(list[_Bill]).validate_json(path.read_text(encoding="utf8"))
 
     with Session(engine) as session:
-        for date, user in bills.items():
-            _fill(session, date, user)
+        for bill in bills:
+            _fill(session, bill)
 
         session.commit()
 
