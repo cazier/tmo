@@ -48,7 +48,7 @@ class BillRender(BillScalar):
 class RenderLoader(BillRender):
     @model_validator(mode="before")
     @classmethod
-    def _test(cls, data: Bill):
+    def _test(cls, data: Bill) -> dict[str, typing.Any]:
         bill = {
             **data.model_dump(),
             "charges": data.charges,

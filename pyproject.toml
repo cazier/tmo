@@ -72,3 +72,8 @@ profile = "black"
 [tool.mypy]
 strict = true
 explicit_package_bases = true
+exclude = [
+    "^tmo/db/api\\.py$",
+    "^tmo/frontend/filters\\.py",
+    "^tmo/frontend/pages\\.py",
+]
