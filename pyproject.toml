@@ -61,7 +61,8 @@ line-length = 120
 
 [tool.coverage.run]
 omit = [
-  "utilities/*"
+  "utilities/*",
+  "tests/*"
 ]
 
 [tool.isort]
