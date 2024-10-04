@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import dataclasses
 import decimal
 import itertools
@@ -14,26 +12,22 @@ JsonDecimal = typing.Annotated[decimal.Decimal, PlainSerializer(float, return_ty
 
 ## Utility classes
 def decimal_field(
-    default: decimal.Decimal | int | float = 0,
+    default: decimal.Decimal = decimal.Decimal("0"),
     max_digits: int = 8,
     decimal_places: int = 2,
-    **kwargs: dict[str, typing.Any],
-) -> Field:
+    **kwargs: typing.Any,
+) -> typing.Any:
     return Field(default=default, max_digits=max_digits, decimal_places=decimal_places, **kwargs)
 
 
 @dataclasses.dataclass(order=True)
 class Render:
-    @staticmethod
-    def noop(value: _T) -> _T:
-        return value
-
     section: str
     order: int
     name: str = dataclasses.field(default="", compare=False)
-    formatter: typing.Callable[[_T], _T] = dataclasses.field(default=noop, compare=False)
+    formatter: typing.Callable[[_T], _T] = dataclasses.field(default=lambda k: k, compare=False)
 
-    def with_name(self, fallback: str) -> Render:
+    def with_name(self, fallback: str) -> typing.Self:
         if self.name == "":
             self.name = fallback
 
@@ -42,12 +36,16 @@ class Render:
 
 class AnnotatedSQLModel(SQLModel):
     @typing.overload
-    def fields_by_annotation(self, string: str) -> typing.Iterable[tuple[str, str]]: ...
+    def fields_by_annotation(self, *, string: str = "") -> typing.Iterable[tuple[str, str]]:
+        ...
 
     @typing.overload
-    def fields_by_annotation(self, klass: type[_T]) -> typing.Iterable[tuple[str, _T]]: ...
+    def fields_by_annotation(self, *, klass: type[_T] | None = None) -> typing.Iterable[tuple[str, _T]]:
+        ...
 
-    def fields_by_annotation(self, string="", klass=None):
+    def fields_by_annotation(
+        self, *, string: str = "", klass: type[_T] | None = None
+    ) -> typing.Iterable[tuple[str, str | _T]]:
         for name, field in itertools.chain(self.model_fields.items(), self.model_computed_fields.items()):
             for item in getattr(field, "metadata", getattr(getattr(field, "return_type", None), "__metadata__", [])):
                 if klass and isinstance(item, klass):

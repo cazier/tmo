@@ -1,4 +1,5 @@
 import datetime
+import decimal
 import json
 import pathlib
 import typing
@@ -76,8 +77,11 @@ def _fill(session: Session, bill: _Bill) -> None:
             minutes=_data.minutes,
             messages=_data.messages,
             data=_data.data,
+            total=sum([_data.line, _data.insurance, _data.usage, _data.phone]),
         )
         session.add(detail)
+
+    _bill.total = sum((item.total for item in _bill.details + _bill.charges), start=decimal.Decimal("0"))
 
     session.add(_bill)
     session.add(user)

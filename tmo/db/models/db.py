@@ -22,9 +22,9 @@ class SubscriberScalar(AnnotatedSQLModel):
     name: typing.Annotated[str, Render("header", 1, formatter=lambda k: k.split(" ")[0])]
 
 
-class BillScalar(SQLModel):
+class BillScalar(AnnotatedSQLModel):
     date: datetime.date = Field(unique=True)
-    total: JsonDecimal = Field(default=0, max_digits=8, decimal_places=2)
+    total: JsonDecimal = decimal_field()
 
 
 class DetailScalar(AnnotatedSQLModel):
