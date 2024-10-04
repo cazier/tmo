@@ -72,7 +72,7 @@ def test_sql_handler(logged: str, expected: str, caplog: pytest.LogCaptureFixtur
         assert expected_token.lower() in token
 
 
-class _TestObject:  # pylint: disable=too-few-public-methods
+class _TestObject:
     params: bool = True
 
     def __repr__(self) -> str:

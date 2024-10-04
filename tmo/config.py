@@ -118,7 +118,6 @@ class Config(Sentinel, BaseSettings):
 
     @classmethod
     def from_file(cls, path: pathlib.Path | str) -> typing.Self:
-        # pylint: disable=import-outside-toplevel
         if isinstance(path, str):
             path = pathlib.Path(path).resolve()
 
@@ -151,4 +150,4 @@ class Config(Sentinel, BaseSettings):
             self.model_validate(original, strict=True)
 
 
-config = Config()  # pylint: disable=invalid-name
+config = Config()

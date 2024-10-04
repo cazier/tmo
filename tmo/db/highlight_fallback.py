@@ -1,4 +1,3 @@
-# pylint: disable=unused-argument,too-few-public-methods
 import typing
 
 P = typing.ParamSpec("P")

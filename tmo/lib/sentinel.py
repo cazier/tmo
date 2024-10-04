@@ -10,7 +10,6 @@ P = typing.ParamSpec("P")
 
 
 class Sentinel(pydantic.BaseModel):
-    # pylint: disable=global-statement
     def __init__(self, *args: P.args, **kwargs: P.kwargs):
         global _UPDATE_SENTINEL, _sentinel
 

@@ -1,4 +1,3 @@
-# pylint: disable=protected-access,redefined-outer-name
 # mypy: disable-error-code="union-attr, no-untyped-def"
 import typing
 

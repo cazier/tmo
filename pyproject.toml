@@ -51,6 +51,7 @@ dev-dependencies = [
     "rich>=13.9.2",
     "ruff>=0.6.9",
     "shandy-sqlfmt>=0.23.2",
+    "types-pygments>=2.18.0.20240506",
     "watchfiles>=0.24.0",
 ]
 

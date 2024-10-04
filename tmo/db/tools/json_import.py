@@ -41,7 +41,7 @@ _bill_cache: dict[datetime.date, Bill] = {}
 _user_cache: dict[str, Subscriber] = {}
 
 
-class _NameMap:  # pylint: disable=too-few-public-methods
+class _NameMap:
     def __init__(self, names: dict[str, str]) -> None:
         self._names = names
 

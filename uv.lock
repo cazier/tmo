@@ -891,6 +891,7 @@ dev = [
     { name = "rich" },
     { name = "ruff" },
     { name = "shandy-sqlfmt" },
+    { name = "types-pygments" },
     { name = "watchfiles" },
 ]
 
@@ -922,6 +923,7 @@ dev = [
     { name = "rich", specifier = ">=13.9.2" },
     { name = "ruff", specifier = ">=0.6.9" },
     { name = "shandy-sqlfmt", specifier = ">=0.23.2" },
+    { name = "types-pygments", specifier = ">=2.18.0.20240506" },
     { name = "watchfiles", specifier = ">=0.24.0" },
 ]
 
@@ -959,6 +961,37 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/c5/58/a79003b91ac2c6890fc5d90145c662fd5771c6f11447f116b63300436bc9/typer-0.12.5.tar.gz", hash = "sha256:f592f089bedcc8ec1b974125d64851029c3b1af145f04aca64d69410f0c9b722", size = 98953 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a8/2b/886d13e742e514f704c33c4caa7df0f3b89e5a25ef8db02aa9ca3d9535d5/typer-0.12.5-py3-none-any.whl", hash = "sha256:62fe4e471711b147e3365034133904df3e235698399bc4de2b36c8579298d52b", size = 47288 },
+]
+
+[[package]]
+name = "types-docutils"
+version = "0.21.0.20241004"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/0f/41/726f3e7ef00e21a190d25ca9ead27ca120dc5b09f5e714be9f5408feb9d2/types-docutils-0.21.0.20241004.tar.gz", hash = "sha256:9816fb4f33067ed22d24c776a411a430bc19318b1af8f373e5581702a07bc4bc", size = 20701 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/de/78/c988441dc1bccf727cf1277272758f86e27b5265fb85b1c1458af24e32f8/types_docutils-0.21.0.20241004-py3-none-any.whl", hash = "sha256:0d2ea594576e8d05c4ad83165da64a511e538f6ab405ab8347cd6b636c59f934", size = 28514 },
+]
+
+[[package]]
+name = "types-pygments"
+version = "2.18.0.20240506"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "types-docutils" },
+    { name = "types-setuptools" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/f0/ed/0a70203637650ecaa74731faf441d128edb908ed6ca184013bfc498283ba/types-Pygments-2.18.0.20240506.tar.gz", hash = "sha256:4b4c37812c87bbde687dbf27adf5bac593745a321e57f678dbc311571ba2ac9d", size = 13516 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4a/52/1a740a823dcfbe7fe7c44c2ff83528df2c2b5b6e93c299e8db7bf4205c1b/types_Pygments-2.18.0.20240506-py3-none-any.whl", hash = "sha256:11c90bc1737c9af55e5569558b88df7c2233e12325cb516215f722271444e91d", size = 20775 },
+]
+
+[[package]]
+name = "types-setuptools"
+version = "75.1.0.20240917"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/48/91/c1168caa2a5ba14c01b146b516fab2d8646887cb5db7e78e13b9c6da88d2/types-setuptools-75.1.0.20240917.tar.gz", hash = "sha256:12f12a165e7ed383f31def705e5c0fa1c26215dd466b0af34bd042f7d5331f55", size = 42585 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/40/4c/a4c87d86ba18ff00773ab8591c79c23a6938293ab3e2cec2b2eb4ca5b644/types_setuptools-75.1.0.20240917-py3-none-any.whl", hash = "sha256:06f78307e68d1bbde6938072c57b81cf8a99bc84bd6dc7e4c5014730b097dc0c", size = 65516 },
 ]
 
 [[package]]

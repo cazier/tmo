@@ -1,4 +1,3 @@
-# pylint: disable=redefined-outer-name,redefined-builtin,no-member
 # mypy: disable-error-code="no-untyped-def"
 
 import contextlib

@@ -6,7 +6,7 @@ from tmo import Config, config
 
 Config.from_file(os.environ["TMO_UVICORN_CONFIG_PATH"])
 
-# pylint: disable=wrong-import-position
+# ruff: noqa: E402
 from tmo.db.api import router as api_router
 from tmo.frontend import router as web_router
 from tmo.frontend import static

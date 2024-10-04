@@ -1,4 +1,3 @@
-# pylint: disable=redefined-outer-name
 # mypy: disable-error-code="no-untyped-def"
 
 import calendar
@@ -68,7 +67,7 @@ def database():
 @pytest.fixture
 def session():
     with config.patch(database={"dialect": "memory"}):
-        from tmo.db.engines import start_engine  # pylint: disable=import-outside-toplevel
+        from tmo.db.engines import start_engine
 
         engine = start_engine()
         SQLModel.metadata.create_all(engine)

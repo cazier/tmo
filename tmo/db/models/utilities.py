@@ -36,12 +36,10 @@ class Render:
 
 class AnnotatedSQLModel(SQLModel):
     @typing.overload
-    def fields_by_annotation(self, *, string: str = "") -> typing.Iterable[tuple[str, str]]:
-        ...
+    def fields_by_annotation(self, *, string: str = "") -> typing.Iterable[tuple[str, str]]: ...
 
     @typing.overload
-    def fields_by_annotation(self, *, klass: type[_T] | None = None) -> typing.Iterable[tuple[str, _T]]:
-        ...
+    def fields_by_annotation(self, *, klass: type[_T] | None = None) -> typing.Iterable[tuple[str, _T]]: ...
 
     def fields_by_annotation(
         self, *, string: str = "", klass: type[_T] | None = None

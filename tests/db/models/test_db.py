@@ -1,4 +1,3 @@
-# pylint: disable=not-callable
 # mypy: disable-error-code="no-untyped-def"
 import datetime
 

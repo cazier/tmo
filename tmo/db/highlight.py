@@ -36,18 +36,15 @@ def attach_handler() -> None:
 
 
 @typing.overload
-def db_print(values: typing.Any, capture: typing.Literal[True], **kwargs: typing.Any) -> str:
-    ...
+def db_print(values: typing.Any, capture: typing.Literal[True], **kwargs: typing.Any) -> str: ...
 
 
 @typing.overload
-def db_print(values: typing.Any, capture: typing.Literal[False], **kwargs: typing.Any) -> None:
-    ...
+def db_print(values: typing.Any, capture: typing.Literal[False], **kwargs: typing.Any) -> None: ...
 
 
 @typing.overload
-def db_print(values: typing.Any, capture: bool = ..., **kwargs: typing.Any) -> None | str:
-    ...
+def db_print(values: typing.Any, capture: bool = ..., **kwargs: typing.Any) -> None | str: ...
 
 
 def db_print(values: typing.Any, capture: bool = False, **kwargs: typing.Any) -> None | str:
@@ -72,7 +69,7 @@ def db_print(values: typing.Any, capture: bool = False, **kwargs: typing.Any) ->
     return print(formatted, **kwargs)
 
 
-class _SqlHandler(logging.StreamHandler[typing.TextIO]):  # pylint: disable=too-few-public-methods
+class _SqlHandler(logging.StreamHandler[typing.TextIO]):
     def __init__(self, stream: None | typing.TextIO = None) -> None:
         stream = stream or sys.stdout
 

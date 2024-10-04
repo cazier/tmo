@@ -6,8 +6,6 @@ import uvicorn
 
 app = typer.Typer()
 
-# pylint: disable=import-outside-toplevel
-
 
 @app.command()
 def serve(
@@ -51,8 +49,7 @@ def playground(
     config_file: Annotated[Optional[pathlib.Path], typer.Option("--config", help="Path to a config file")] = None,
     db: Annotated[Optional[pathlib.Path], typer.Option(help="Path to a sqlite database")] = None,
 ) -> None:
-    # pylint: disable=unused-import,unused-variable,too-many-locals
-
+    # ruff: noqa: F401, F841
     import IPython
     from sqlmodel import Session, func, select
 
@@ -90,7 +87,7 @@ def info() -> None:
     version = f" v{__version__.MAJOR}.{__version__.MINOR}.{__version__.PATCH}"
 
     try:
-        from rich import print  # pylint: disable=redefined-builtin
+        from rich import print
 
         head = f"[bold underline2 blue]{head}[/]"
         version = f"[green]{version}[/]"
