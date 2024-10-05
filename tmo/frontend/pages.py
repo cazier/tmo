@@ -41,7 +41,7 @@ async def bill(*, year: Optional[int] = None, month: Optional[int] = None, reque
 
     current, previous = resp.json()
 
-    total, table = generate_table([current, previous], config.frontend.dependents)
+    total, table = generate_table(current, previous, **config.frontend.dependents)
     charts = generate_charts(current, config.frontend.colors)
 
     return templates.TemplateResponse(

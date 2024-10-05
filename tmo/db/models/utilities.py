@@ -24,14 +24,9 @@ def decimal_field(
 class Render:
     section: str
     order: int
-    name: str = dataclasses.field(default="", compare=False)
+    id: str
+    title: str = dataclasses.field(default="", compare=False)
     formatter: typing.Callable[[_T], _T] = dataclasses.field(default=lambda k: k, compare=False)
-
-    def with_name(self, fallback: str) -> typing.Self:
-        if self.name == "":
-            self.name = fallback
-
-        return self
 
 
 class AnnotatedSQLModel(SQLModel):

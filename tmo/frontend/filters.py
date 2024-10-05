@@ -1,30 +1,57 @@
 import collections
+import decimal
 import typing
 
-from pydantic import validate_call
+import pydantic
 
-from tmo.db.models import Render
+from tmo.db.models import Charge, Render
 from tmo.db.schemas import BillRender
 
 
-@validate_call
+class Row(pydantic.BaseModel):
+    id: str
+    title: str
+    values: list[decimal.Decimal | int] = pydantic.Field(default_factory=[])
+
+
+class Section(pydantic.BaseModel):
+    rows: list[Row] = pydantic.Field(default_factory=list)
+
+
+_Section = typing.Annotated[Section, pydantic.Field(default_factory=Section)]
+
+
+class Table(pydantic.BaseModel):
+    total: decimal.Decimal
+
+    names: list[str]
+    charges: _Section
+    usage: _Section
+    summary: _Section
+    recap: _Section
+    shared: list[Charge] = pydantic.Field(default_factory=list)
+    owed: dict[str, decimal.Decimal] = pydantic.Field(default_factory=dict)
+
+
+@pydantic.validate_call
 def generate_table(
-    data: list[BillRender], dependents: dict[str, list[str]]
+    present: BillRender, previous: BillRender, **dependents: list[str]
 ) -> tuple[dict[str, dict[str, list[typing.Any]]], dict[str, float], float]:
-    present, previous = data
-
-    total = present.total
-
-    resp = {section: collections.defaultdict(list) for section in BillRender.sections}
+    resp = {
+        "total": present.total,
+        "names": [],
+        **{section: collections.defaultdict(list) for section in BillRender.sections},
+    }
     resp.update(shared=[], owed={name: 0.0 for name in dependents})
     _lookup = {name: target for target, names in dependents.items() for name in names}
 
     for subscriber in present.subscribers:
-        for key, schema in subscriber.fields_by_annotation(klass=Render):
-            resp[schema.section][(key, schema.name)].append(schema.formatter(getattr(subscriber, key)))
+        resp["names"].append(subscriber.name)
+        # for key, schema in subscriber.fields_by_annotation(klass=Render):
+        #     resp[schema.section].append(schema.formatter(getattr(subscriber, key)))
 
         for key, schema in subscriber.details.fields_by_annotation(klass=Render):
-            resp[schema.section][(key, schema.name)].append(schema.formatter(getattr(subscriber.details, key)))
+            resp[schema.section][schema.id].append(schema.formatter(getattr(subscriber.details, key)))
 
             if key == "total":
                 for past_subscriber in previous.subscribers:
@@ -49,10 +76,19 @@ def generate_table(
 
     resp["owed"] = {key: value for key, value in resp["owed"].items() if value != 0}
 
+    breakpoint()
+    table = Table.model_validate(resp)
+
+    from rich import print
+
+    print("=" * 80)
+    print(resp)
+    print("=" * 80)
+
     return total, resp
 
 
-@validate_call
+@pydantic.validate_call
 def generate_charts(data: BillRender, colors: dict[str, str]) -> dict[str, dict[str, str | int | float]]:
     resp = collections.defaultdict(dict)
 
