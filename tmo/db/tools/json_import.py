@@ -29,6 +29,7 @@ class _SubscriberImport(pydantic.BaseModel):
 class _Other(pydantic.BaseModel):
     kind: str
     value: decimal.Decimal
+    split: bool = False
 
 
 class _Bill(pydantic.BaseModel):
@@ -58,7 +59,7 @@ def _fill(session: Session, bill: _Bill) -> None:
     _bill = _bill_cache.setdefault(bill.date, Bill(date=bill.date))
 
     for other in bill.other:
-        charge = Charge(name=other.kind, total=other.value, bill=_bill)
+        charge = Charge(name=other.kind, total=other.value, split=other.split, bill=_bill)
         session.add(charge)
 
     for _data in bill.subscribers:

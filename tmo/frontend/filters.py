@@ -19,6 +19,8 @@ def generate_table(
     resp.update(shared=[], owed={name: 0.0 for name in dependents})
     _lookup = {name: target for target, names in dependents.items() for name in names}
 
+    split = sum([charge.total for charge in present.charges if charge.split]) / len(present.subscribers)
+
     for subscriber in present.subscribers:
         for key, schema in subscriber.fields_by_annotation(klass=Render):
             resp[schema.section][(key, schema.name)].append(schema.formatter(getattr(subscriber, key)))
@@ -35,7 +37,7 @@ def generate_table(
                     resp["recap"]["(Last Month)"].append(schema.formatter(0))
 
         if target := _lookup.get(_split(subscriber.name)):
-            resp["owed"][target] += float(subscriber.details.total)
+            resp["owed"][target] += float(subscriber.details.total) + float(split)
 
     for charge in present.charges:
         values = {"name": charge.name, "present": charge.total, "previous": 0}
