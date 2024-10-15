@@ -48,6 +48,7 @@ def import_from_json(
 def playground(
     config_file: Annotated[Optional[pathlib.Path], typer.Option("--config", help="Path to a config file")] = None,
     db: Annotated[Optional[pathlib.Path], typer.Option(help="Path to a sqlite database")] = None,
+    show_sql: Annotated[bool, typer.Option(help="Show SQL statements")] = False,
 ) -> None:
     # ruff: noqa: F401, F841
     import IPython
@@ -69,6 +70,8 @@ def playground(
 
         else:
             updates = {"dialect": "memory"}
+
+        updates["echo"] = show_sql
 
     with config.patch(database=updates):
         from tmo.db.engines import start_engine
