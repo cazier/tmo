@@ -56,19 +56,15 @@ dev-dependencies = [
     "watchfiles>=0.24.0",
 ]
 
+# FORMATTING
 [tool.ruff]
 line-length = 120
-
-[tool.coverage.run]
-omit = [
-  "utilities/*",
-  "tests/*"
-]
 
 [tool.isort]
 line_length = 120
 profile = "black"
 
+# LINTING
 [tool.mypy]
 strict = true
 explicit_package_bases = true
@@ -76,4 +72,14 @@ exclude = [
     "^tmo/db/api\\.py$",
     "^tmo/frontend/filters\\.py",
     "^tmo/frontend/pages\\.py",
+]
+
+# TESTING
+[tool.pytest.ini_options]
+addopts = "-s"
+
+[tool.coverage.run]
+omit = [
+  "utilities/*",
+  "tests/*"
 ]
