@@ -1,10 +1,86 @@
 import collections
+import dataclasses
+import datetime
+import decimal
 import typing
 
-from pydantic import validate_call
+from pydantic import BaseModel, Field, computed_field, field_validator, model_validator, validate_call
 
-from tmo.db.models import Render
-from tmo.db.schemas import BillRender
+from ..db.models import Bill, Charge, Render
+from ..db.schemas import BillRender, SubscriberReadWithDetails
+from ..lib.utilities import get_attr_item
+
+
+@dataclasses.dataclass
+class Element:
+    id: str
+    title: str
+    is_currency: bool = False
+
+
+class Transpose:
+    pass
+
+
+_list = (Field(default_factory=list), (_transpose := Transpose()))
+
+
+class BillsRender(BaseModel):
+    month: datetime.date
+    total: decimal.Decimal
+
+    current: typing.Annotated[BillRender, Field(exclude=True)]
+    previous: typing.Annotated[BillRender, Field(exclude=True)]
+    _recap: dict[str, decimal.Decimal]
+
+    phone: typing.Annotated[list[decimal.Decimal], *_list, Element("phone", "Phone Cost", is_currency=True)]
+    line: typing.Annotated[list[decimal.Decimal], *_list, Element("line", "Line Cost", is_currency=True)]
+    insurance: typing.Annotated[list[decimal.Decimal], *_list, Element("insurance", "Insurance", is_currency=True)]
+    usage: typing.Annotated[list[decimal.Decimal], *_list, Element("usage", "Usage Charges", is_currency=True)]
+
+    minutes: typing.Annotated[list[int], *_list, Element("minutes", "Minutes (min)")]
+    messages: typing.Annotated[list[int], *_list, Element("messages", "Messages (#)")]
+    data: typing.Annotated[list[decimal.Decimal], *_list, Element("data", "Data (GB)")]
+
+    @field_validator("month", mode="after")
+    @classmethod
+    def _month(cls, v: datetime.date) -> None:
+        return v.replace(day=1)
+
+    @property
+    def months(self) -> typing.Annotated[tuple[datetime.date, datetime.date], Element("date", "Date")]:
+        return (
+            (self.month - datetime.timedelta(days=1)).replace(day=1),
+            (self.month + datetime.timedelta(days=45)).replace(day=1),
+        )
+
+    @property
+    def names(self) -> typing.Iterator[str]:
+        yield ""
+        yield from (subscriber.name for subscriber in self.current.subscribers)
+
+    @property
+    def recap(self) -> typing.Iterator[decimal.Decimal]:
+        previous = {subscriber.number: subscriber.details.total for subscriber in self.previous.subscribers}
+
+        yield from (previous.get(current.number, decimal.Decimal(0)) for current in self.current.subscribers)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _transpose_subscriber_info(cls, data: dict[str, typing.Any]) -> dict[str, typing.Any]:
+        _data = collections.defaultdict(list, **data)
+
+        for name, info in cls.model_fields.items():
+            if _transpose not in info.metadata:
+                continue
+
+            for subscriber in get_attr_item(data, "current", "subscribers", default=[]):
+                _data[name].append(getattr(subscriber.details, name))
+
+        return _data
+
+    # @model_validator(mode="after")
+    # def _update_recap_data(self) -> typing.Self
 
 
 @validate_call
@@ -12,6 +88,10 @@ def generate_table(
     data: list[BillRender], dependents: dict[str, list[str]]
 ) -> tuple[dict[str, dict[str, list[typing.Any]]], dict[str, float], float]:
     present, previous = data
+
+    M = BillsRender(month=present.date, total=1.23, current=present, previous=previous)
+
+    breakpoint()
 
     total = present.total
 
@@ -50,6 +130,12 @@ def generate_table(
         resp["shared"].append(values)
 
     resp["owed"] = {key: value for key, value in resp["owed"].items() if value != 0}
+
+    from rich import print
+
+    print(present)
+
+    print(resp)
 
     return total, resp
 
