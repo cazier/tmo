@@ -6,6 +6,7 @@ import typing
 
 from pydantic import BaseModel, Field, computed_field, field_validator, model_validator, validate_call
 
+from ..config import config
 from ..db.models import Bill, Charge, Render
 from ..db.schemas import BillRender, SubscriberReadWithDetails
 from ..lib.utilities import get_attr_item
@@ -22,7 +23,7 @@ class Transpose:
     pass
 
 
-_list = (Field(default_factory=list), (_transpose := Transpose()))
+_list = (Field(default_factory=list), (_transpose_ := Transpose()))
 
 
 class BillsRender(BaseModel):
@@ -31,7 +32,6 @@ class BillsRender(BaseModel):
 
     current: typing.Annotated[BillRender, Field(exclude=True)]
     previous: typing.Annotated[BillRender, Field(exclude=True)]
-    _recap: dict[str, decimal.Decimal]
 
     phone: typing.Annotated[list[decimal.Decimal], *_list, Element("phone", "Phone Cost", is_currency=True)]
     line: typing.Annotated[list[decimal.Decimal], *_list, Element("line", "Line Cost", is_currency=True)]
@@ -44,7 +44,7 @@ class BillsRender(BaseModel):
 
     @field_validator("month", mode="after")
     @classmethod
-    def _month(cls, v: datetime.date) -> None:
+    def _month(cls, v: datetime.date) -> datetime.date:
         return v.replace(day=1)
 
     @property
@@ -65,22 +65,46 @@ class BillsRender(BaseModel):
 
         yield from (previous.get(current.number, decimal.Decimal(0)) for current in self.current.subscribers)
 
+    @property
+    def owed(self) -> dict[str, decimal.Decimal]:
+        owed: dict[str, decimal.Decimal] = collections.defaultdict(decimal.Decimal)
+
+        for subscriber in self.current.subscribers:
+            if subscriber.number not in config.frontend.dependents:
+                continue
+
+            for dependent in config.frontend.dependents[subscriber.number]:
+                owed[subscriber.name] += self._lookup_subscriber(number=dependent).details.total
+
+        return owed
+
+    def _lookup_subscriber(self, *, name: str = "", number: str = "") -> SubscriberReadWithDetails:
+        number = number.replace("-", "")
+
+        if name and number or (name == "" and number == ""):
+            raise ValueError("Must supply exactly one of name or number, but not both.")
+
+        for subscriber in self.current.subscribers:
+            if number and subscriber.number.replace("-", "") == number:
+                return subscriber
+            if name and subscriber.name == name:
+                return subscriber
+
+        raise LookupError(f"Could not find the user: {name if name else number}")
+
     @model_validator(mode="before")
     @classmethod
     def _transpose_subscriber_info(cls, data: dict[str, typing.Any]) -> dict[str, typing.Any]:
         _data = collections.defaultdict(list, **data)
 
-        for name, info in cls.model_fields.items():
-            if _transpose not in info.metadata:
+        for field, info in cls.model_fields.items():
+            if _transpose_ not in info.metadata:
                 continue
 
             for subscriber in get_attr_item(data, "current", "subscribers", default=[]):
-                _data[name].append(getattr(subscriber.details, name))
+                _data[field].append(get_attr_item(subscriber, "details", field))
 
         return _data
-
-    # @model_validator(mode="after")
-    # def _update_recap_data(self) -> typing.Self
 
 
 @validate_call
