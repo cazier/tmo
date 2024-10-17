@@ -10,6 +10,7 @@ import pydantic
 import pytest
 from sqlmodel import Session, SQLModel
 
+from tests.helpers import phone_number
 from tmo import config
 
 USERS: int = 10
@@ -51,11 +52,8 @@ def bills():
 
 @pytest.fixture(scope="session")
 def subscribers():
-    def _phone_number() -> str:
-        return f"{random.randint(0, 999):03d}-{random.randint(0, 999):03d}-{random.randint(0, 9999):04d}"
-
     _faker = faker.Faker()
-    return [{"number": _phone_number(), "name": _faker.name(), "id": index + 1} for index in range(USERS)]
+    return [{"number": phone_number(), "name": _faker.name(), "id": index + 1} for index in range(USERS)]
 
 
 @pytest.fixture(scope="session")
