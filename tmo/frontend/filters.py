@@ -4,48 +4,60 @@ import datetime
 import decimal
 import typing
 
-from pydantic import BaseModel, Field, computed_field, field_validator, model_validator, validate_call
+from pydantic import BaseModel, Field, field_validator, model_validator, validate_call
 
 from ..config import config
-from ..db.models import Bill, Charge, Render
+from ..db.models import Render
 from ..db.schemas import BillRender, SubscriberReadWithDetails
-from ..lib.utilities import get_attr_item
+
+Unset = object()
+Skip = object()
 
 
 @dataclasses.dataclass
 class Element:
-    id: str
     title: str
+    section: str
+    id: str | object = Unset
+    field: str | object = Unset
     is_currency: bool = False
 
 
-class Transpose:
-    pass
+_list = Field(default_factory=list)
 
 
-_list = (Field(default_factory=list), (_transpose_ := Transpose()))
+class _Shared(BaseModel):
+    name: str
+    present: decimal.Decimal
+    previous: decimal.Decimal
 
 
 class BillsRender(BaseModel):
     month: datetime.date
-    total: decimal.Decimal
 
-    current: typing.Annotated[BillRender, Field(exclude=True)]
-    previous: typing.Annotated[BillRender, Field(exclude=True)]
+    current: typing.Annotated[BillRender, Field(exclude=True, repr=False)]
+    previous: typing.Annotated[BillRender, Field(exclude=True, repr=False)]
 
-    phone: typing.Annotated[list[decimal.Decimal], *_list, Element("phone", "Phone Cost", is_currency=True)]
-    line: typing.Annotated[list[decimal.Decimal], *_list, Element("line", "Line Cost", is_currency=True)]
-    insurance: typing.Annotated[list[decimal.Decimal], *_list, Element("insurance", "Insurance", is_currency=True)]
-    usage: typing.Annotated[list[decimal.Decimal], *_list, Element("usage", "Usage Charges", is_currency=True)]
+    phone: typing.Annotated[list[decimal.Decimal], _list, Element("Phone Cost", "charges", is_currency=True)]
+    line: typing.Annotated[list[decimal.Decimal], _list, Element("Line Cost", "charges", is_currency=True)]
+    insurance: typing.Annotated[list[decimal.Decimal], _list, Element("Insurance", "charges", is_currency=True)]
+    usage: typing.Annotated[list[decimal.Decimal], _list, Element("Usage Charges", "charges", is_currency=True)]
 
-    minutes: typing.Annotated[list[int], *_list, Element("minutes", "Minutes (min)")]
-    messages: typing.Annotated[list[int], *_list, Element("messages", "Messages (#)")]
-    data: typing.Annotated[list[decimal.Decimal], *_list, Element("data", "Data (GB)")]
+    minutes: typing.Annotated[list[int], _list, Element("Minutes (min)", "usage")]
+    messages: typing.Annotated[list[int], _list, Element("Messages (#)", "usage")]
+    data: typing.Annotated[list[decimal.Decimal], _list, Element("Data (GB)", "usage")]
+
+    summary: typing.Annotated[list[decimal.Decimal], _list, Element("Total Charges", "summary", field="total")]
+    recap: typing.Annotated[list[decimal.Decimal], _list, Element("(Last Month)", "recap", field=Skip)]
 
     @field_validator("month", mode="after")
     @classmethod
     def _month(cls, v: datetime.date) -> datetime.date:
         return v.replace(day=1)
+
+    @property
+    def total(self) -> decimal.Decimal:
+        return self.current.total
 
     @property
     def months(self) -> typing.Annotated[tuple[datetime.date, datetime.date], Element("date", "Date")]:
@@ -56,27 +68,34 @@ class BillsRender(BaseModel):
 
     @property
     def names(self) -> typing.Iterator[str]:
-        yield ""
         yield from (subscriber.name for subscriber in self.current.subscribers)
-
-    @property
-    def recap(self) -> typing.Iterator[decimal.Decimal]:
-        previous = {subscriber.number: subscriber.details.total for subscriber in self.previous.subscribers}
-
-        yield from (previous.get(current.number, decimal.Decimal(0)) for current in self.current.subscribers)
 
     @property
     def owed(self) -> dict[str, decimal.Decimal]:
         owed: dict[str, decimal.Decimal] = collections.defaultdict(decimal.Decimal)
 
         for subscriber in self.current.subscribers:
-            if subscriber.number not in config.frontend.dependents:
+            dependents = config.frontend.dependents.get(subscriber.number, [])
+            if not dependents:
                 continue
 
             for dependent in config.frontend.dependents[subscriber.number]:
                 owed[subscriber.name] += self._lookup_subscriber(number=dependent).details.total
 
         return owed
+
+    @property
+    def charges(self) -> list[_Shared]:
+        return [
+            _Shared(
+                name=charge.name,
+                present=charge.total,
+                previous=next(
+                    (prev.total for prev in self.previous.charges if prev.name == charge.name), decimal.Decimal(0)
+                ),
+            )
+            for charge in sorted(self.current.charges, key=lambda k: k.name)
+        ]
 
     def _lookup_subscriber(self, *, name: str = "", number: str = "") -> SubscriberReadWithDetails:
         number = number.replace("-", "")
@@ -92,19 +111,70 @@ class BillsRender(BaseModel):
 
         raise LookupError(f"Could not find the user: {name if name else number}")
 
-    @model_validator(mode="before")
+    @model_validator(mode="after")
     @classmethod
-    def _transpose_subscriber_info(cls, data: dict[str, typing.Any]) -> dict[str, typing.Any]:
-        _data = collections.defaultdict(list, **data)
+    def _update_elements(cls, data: typing.Any) -> typing.Any:
+        for name, field in cls.model_fields.items():
+            for metadata in field.metadata:
+                if isinstance(metadata, Element):
+                    if metadata.id is Unset:
+                        metadata.id = name
 
-        for field, info in cls.model_fields.items():
-            if _transpose_ not in info.metadata:
+                    if metadata.field is Unset:
+                        metadata.field = name
+
+        return data
+
+    @model_validator(mode="after")
+    def _transpose_subscriber_info(self) -> typing.Self:
+        for field in self.model_fields:
+            try:
+                element = self.get_element(field)
+
+            except TypeError:
                 continue
 
-            for subscriber in get_attr_item(data, "current", "subscribers", default=[]):
-                _data[field].append(get_attr_item(subscriber, "details", field))
+            if element.field is Skip:
+                continue
 
-        return _data
+            for subscriber in self.current.subscribers:
+                getattr(self, field).append(getattr(subscriber.details, element.field))  # type: ignore[call-overload]
+
+        previous = {subscriber.number: subscriber.details.total for subscriber in self.previous.subscribers}
+
+        for current in self.current.subscribers:
+            self.recap.append(previous.get(current.number, decimal.Decimal(0)))
+
+        return self
+
+    def get(self, field: str) -> typing.Iterator[int | decimal.Decimal]:
+        try:
+            self.get_element(field)
+
+        except KeyError:
+            raise AttributeError(f"{type(self).__name__!r} object has no attribute {field!r}")
+
+        except TypeError:
+            raise ValueError(f"Invalid (non-transposed) field '{field}'")
+
+        yield from getattr(self, field)
+
+    @classmethod
+    def get_element(cls, field: str) -> Element:
+        info = cls.model_fields[field]
+
+        for metadata in info.metadata:
+            if isinstance(metadata, Element):
+                return metadata
+
+        raise TypeError(f"Field '{field}' is not an Element type")
+
+    @classmethod
+    def fields_in_section(cls, section: str) -> typing.Iterator[tuple[str, Element]]:
+        for field, info in cls.model_fields.items():
+            for metadata in info.metadata:
+                if isinstance(metadata, Element) and metadata.section == section:
+                    yield field, metadata
 
 
 @validate_call
@@ -112,10 +182,6 @@ def generate_table(
     data: list[BillRender], dependents: dict[str, list[str]]
 ) -> tuple[dict[str, dict[str, list[typing.Any]]], dict[str, float], float]:
     present, previous = data
-
-    M = BillsRender(month=present.date, total=1.23, current=present, previous=previous)
-
-    breakpoint()
 
     total = present.total
 
