@@ -40,7 +40,11 @@ def test_split():
     assert "" == filters._split("")
 
 
-@pytest.mark.parametrize(("klass", "value"), (("is-currency-negative", -1), ("is-currency-zero", 0), ("", 1)))
+@pytest.mark.parametrize(
+    ("klass", "value"),
+    (("is-currency-negative", -1), ("is-currency-zero", 0), ("", 1)),
+    ids=("negative", "zero", "positive"),
+)
 def test_currency_class(klass: str, value: typing.Any):
     assert klass == filters.currency_class(value)
 
@@ -103,6 +107,19 @@ def bill(
     )
 
 
+@pytest.mark.parametrize(("diff"), (1, 0, -1), ids=("more", "equal", "fewer"))
+def test_totals_validator(diff: int):
+    total = random.randint(50, 100)
+    recap = total + diff
+
+    if diff == 1:
+        assert filters.Totals(total=total, recap=recap).klass == "is-currency-less"
+    elif diff == 0:
+        assert filters.Totals(total=total, recap=recap).klass == ""
+    if diff == -1:
+        assert filters.Totals(total=total, recap=recap).klass == "is-currency-more"
+
+
 class TestBillsRender:
     @pytest.mark.parametrize(
         ("current", "last", "next"),
@@ -130,7 +147,7 @@ class TestBillsRender:
                     assert metadata.id != ""
 
     def test_names(self, faker: faker.Faker):
-        names = [faker.name() for _ in range(random.randint(10, 30))]
+        names = [faker.first_name() for _ in range(random.randint(10, 30))]
         b = filters.BillsRender.model_construct(current=NS(subscribers=[NS(name=name) for name in names]))
         assert list(b.names) == [*names]
 
@@ -174,12 +191,16 @@ class TestBillsRender:
 
     def test_owed(self, faker: faker.Faker):
         names = [
-            NS(name=faker.name(), number=phone_number(), details=NS(total=decimal.Decimal(random.randint(0, 100))))
+            NS(
+                name=faker.first_name(),
+                number=phone_number(),
+                details=NS(total=decimal.Decimal(random.randint(0, 100))),
+            )
             for _ in range(20)
         ]
 
         steps = [0, *sorted(random.sample(range(20), 5)), len(names)]
-        dependents = {}
+        dependents: dict[str, list[str]] = {}
         total = {}
 
         for first, last in itertools.pairwise(steps):
@@ -187,6 +208,12 @@ class TestBillsRender:
             total[names[first].name] = sum(subscriber.details.total for subscriber in names[first:last])
 
         b = filters.BillsRender.model_construct(current=NS(subscribers=names))
+
+        with config.patch(frontend={"dependents": dependents}):
+            assert b.owed == total
+
+        number, *_ = dependents.keys()
+        dependents[number].append(faker.first_name())
 
         with config.patch(frontend={"dependents": dependents}):
             assert b.owed == total
@@ -319,3 +346,12 @@ class TestBillsRender:
         for field in ("phone", "line", "insurance", "usage", "minutes", "messages", "data"):
             for first, second in itertools.pairwise(getattr(b, field)):
                 assert first == second - 10
+
+    def test_iter_totals(self):
+        totals = [1, 1, 1]
+        recaps = [0, 1, 2]
+
+        b = filters.BillsRender.model_construct(totals=totals, recap=recaps)
+        assert list(b.iter_totals()) == [
+            filters.Totals(total=total, recap=recap) for total, recap in zip(totals, recaps)
+        ]
