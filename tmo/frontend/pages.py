@@ -10,7 +10,7 @@ from httpx import AsyncClient
 
 from tmo import config
 from tmo.db.api import router as api
-from tmo.frontend.filters import BillsRender, currency_class, generate_charts
+from tmo.frontend.filters import BillsRender, currency_class
 
 templates = Jinja2Templates(directory=pathlib.Path(__file__).parent.joinpath("templates"))
 templates.env.globals.update(domain="T-Mobile Bills", cdn=not config.api.debug)
@@ -43,10 +43,4 @@ async def bill(*, year: Optional[int] = None, month: Optional[int] = None, reque
 
     render = BillsRender.model_validate({"month": date, "current": current, "previous": previous})
 
-    charts = generate_charts(current, config.frontend.colors)
-
-    return templates.TemplateResponse(
-        request=request,
-        name="bill.html.j2",
-        context={"bill": render, "date": date, "charts": charts},
-    )
+    return templates.TemplateResponse(request=request, name="bill.html.j2", context={"bill": render, "date": date})

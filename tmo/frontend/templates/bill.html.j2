@@ -282,26 +282,21 @@
     });
 
     (async function () {
-        charts = JSON.parse(`{{ charts | tojson }}`);
+        charts = JSON.parse(`{{ bill.charts.model_dump_json() | safe }}`);
+
         for (const [kind, data] of Object.entries(charts)) {
-            if (kind == "colors") { continue; };
+            if (kind == "colors" || kind == "names") { continue; };
 
-            var names = new Array();
-            var numbers = new Array();
-            var colors = new Array();
-
-            for (const [name, value] of Object.entries(data)) {
-                names.push(name);
-                numbers.push(value);
-                colors.push(charts['colors'][name]);
-            };
+            var names = charts["names"];
+            var colors = charts["colors"];
+            var values = data;
 
             new Chart(
                 $(`#${kind}-chart`),
                 {
                     type: "pie",
                     options: { animation: false, aspectRatio: 1, plugins: { legend: { position: "right" } } },
-                    data: { labels: names, datasets: [{ label: kind, data: numbers, backgroundColor: colors }] }
+                    data: { labels: names, datasets: [{ label: kind, data: values, backgroundColor: colors }] }
                 }
             );
         };

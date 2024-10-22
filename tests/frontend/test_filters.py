@@ -32,23 +32,6 @@ class _TestObject:
     subscribers: list[typing.Any] = dataclasses.field(default_factory=list)
 
 
-def test_split():
-    assert "first" == filters._split("first")
-    assert "first" == filters._split("first second")
-    assert "first" == filters._split("first second third")
-
-    assert "" == filters._split("")
-
-
-@pytest.mark.parametrize(
-    ("klass", "value"),
-    (("is-currency-negative", -1), ("is-currency-zero", 0), ("", 1)),
-    ids=("negative", "zero", "positive"),
-)
-def test_currency_class(klass: str, value: typing.Any):
-    assert klass == filters.currency_class(value)
-
-
 def bill(
     month: typing.Any = None,
     total: typing.Any = None,
@@ -295,7 +278,7 @@ class TestBillsRender:
                         total=decimal.Decimal(14),
                         minutes=15,
                         messages=16,
-                        data=decimal.Decimal(16),
+                        data=decimal.Decimal(17),
                     ),
                 ),
                 NS(
@@ -310,7 +293,7 @@ class TestBillsRender:
                         total=decimal.Decimal(24),
                         minutes=25,
                         messages=26,
-                        data=decimal.Decimal(26),
+                        data=decimal.Decimal(27),
                     ),
                 ),
                 NS(
@@ -325,7 +308,7 @@ class TestBillsRender:
                         total=decimal.Decimal(34),
                         minutes=35,
                         messages=36,
-                        data=decimal.Decimal(36),
+                        data=decimal.Decimal(37),
                     ),
                 ),
             ],
@@ -355,3 +338,97 @@ class TestBillsRender:
         assert list(b.iter_totals()) == [
             filters.Totals(total=total, recap=recap) for total, recap in zip(totals, recaps)
         ]
+
+    def test_charts(self, faker: faker.Faker):
+        current = NS(
+            date=faker.date_object(),
+            total=decimal.Decimal(random.randint(0, 100)),
+            id=random.randint(1, 100),
+            charges=[],
+            subscribers=[
+                NS(
+                    number=phone_number(),
+                    name=faker.name(),
+                    id=1,
+                    details=NS(
+                        phone=decimal.Decimal(10),
+                        line=decimal.Decimal(11),
+                        insurance=decimal.Decimal(12),
+                        usage=decimal.Decimal(13),
+                        total=decimal.Decimal(14),
+                        minutes=15,
+                        messages=16,
+                        data=decimal.Decimal(17),
+                    ),
+                ),
+                NS(
+                    number=phone_number(),
+                    name=faker.name(),
+                    id=1,
+                    details=NS(
+                        phone=decimal.Decimal(20),
+                        line=decimal.Decimal(21),
+                        insurance=decimal.Decimal(22),
+                        usage=decimal.Decimal(23),
+                        total=decimal.Decimal(24),
+                        minutes=25,
+                        messages=26,
+                        data=decimal.Decimal(27),
+                    ),
+                ),
+                NS(
+                    number=phone_number(),
+                    name=faker.name(),
+                    id=1,
+                    details=NS(
+                        phone=decimal.Decimal(30),
+                        line=decimal.Decimal(31),
+                        insurance=decimal.Decimal(32),
+                        usage=decimal.Decimal(33),
+                        total=decimal.Decimal(34),
+                        minutes=35,
+                        messages=36,
+                        data=decimal.Decimal(37),
+                    ),
+                ),
+            ],
+        )
+
+        b = filters.BillsRender(
+            month=faker.date_object(),
+            current=current,
+            previous=NS(
+                date=faker.date_object(),
+                total=decimal.Decimal(100),
+                id=1,
+                charges=[],
+                subscribers=[],
+            ),
+        )
+
+        with config.patch(
+            frontend={"colors": {subscriber.number: str(index) for index, subscriber in enumerate(current.subscribers)}}
+        ):
+            assert b.charts == filters.Charts(
+                names=[subscriber.name.split(" ")[0] for subscriber in current.subscribers],
+                colors=["0", "1", "2"],
+                minutes=[15, 25, 35],
+                messages=[16, 26, 36],
+                data=[decimal.Decimal(17), decimal.Decimal(27), decimal.Decimal(37)],
+            )
+
+    def test_split(self):
+        assert "first" == filters.BillsRender._split("first")
+        assert "first" == filters.BillsRender._split("first second")
+        assert "first" == filters.BillsRender._split("first second third")
+
+        assert "" == filters.BillsRender._split("")
+
+
+@pytest.mark.parametrize(
+    ("klass", "value"),
+    (("is-currency-negative", -1), ("is-currency-zero", 0), ("", 1)),
+    ids=("negative", "zero", "positive"),
+)
+def test_currency_class(klass: str, value: typing.Any):
+    assert klass == filters.currency_class(value)

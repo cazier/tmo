@@ -3,7 +3,7 @@ import datetime
 import decimal
 import typing
 
-from pydantic import BaseModel, Field, dataclasses, field_validator, model_validator, validate_call
+from pydantic import BaseModel, Field, dataclasses, field_validator, model_validator
 
 from ..config import config
 from ..db.schemas import BillRender, SubscriberReadWithDetails
@@ -33,6 +33,15 @@ class Totals(BaseModel):
         if self.total > self.recap:
             self.klass = "is-currency-more"
         return self
+
+
+class Charts(BaseModel):
+    names: list[str]
+    colors: list[str]
+
+    data: list[decimal.Decimal]
+    minutes: list[int]
+    messages: list[int]
 
 
 _list = Field(default_factory=list)
@@ -80,7 +89,7 @@ class BillsRender(BaseModel):
 
     @property
     def names(self) -> typing.Iterator[str]:
-        yield from (_split(subscriber.name) for subscriber in self.current.subscribers)
+        yield from (self._split(subscriber.name) for subscriber in self.current.subscribers)
 
     @property
     def owed(self) -> dict[str, decimal.Decimal]:
@@ -93,7 +102,7 @@ class BillsRender(BaseModel):
 
             for dependent in config.frontend.dependents[subscriber.number]:
                 try:
-                    owed[_split(subscriber.name)] += self._lookup_subscriber(number=dependent).details.total
+                    owed[self._split(subscriber.name)] += self._lookup_subscriber(number=dependent).details.total
 
                 except LookupError:
                     continue
@@ -127,7 +136,7 @@ class BillsRender(BaseModel):
 
         raise LookupError(f"Could not find the user: {name if name else number}")
 
-    @model_validator(mode="after")
+    @model_validator(mode="before")
     @classmethod
     def _update_elements(cls, data: typing.Any) -> typing.Any:
         for name, field in cls.model_fields.items():
@@ -196,26 +205,16 @@ class BillsRender(BaseModel):
                 if isinstance(metadata, Element) and metadata.section == section:
                     yield field, metadata
 
+    @property
+    def charts(self) -> Charts:
+        colors = [config.frontend.colors[subscriber.number] for subscriber in self.current.subscribers]
+        return Charts(
+            names=list(self.names), colors=colors, data=self.data, minutes=self.minutes, messages=self.messages
+        )
 
-@validate_call
-def generate_charts(data: BillRender, colors: dict[str, str]) -> dict[str, dict[str, str | int | float]]:
-    resp = collections.defaultdict(dict)
-
-    for subscriber in data.subscribers:
-        for key, _ in subscriber.details.fields_by_annotation(string="#"):
-            resp[key][subscriber.name] = float(getattr(subscriber.details, key))
-
-        resp["colors"][subscriber.name] = colors[_split(subscriber.name)]
-
-    from rich import print
-
-    print(resp)
-
-    return resp
-
-
-def _split(string: str) -> str:
-    return string.split(" ")[0]
+    @staticmethod
+    def _split(string: str) -> str:
+        return string.split(" ")[0]
 
 
 def currency_class(value: int | float) -> str:
