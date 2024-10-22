@@ -10,6 +10,7 @@ dependencies = [
     "httpx>=0.27.2",
     "jinja2>=3.1.4",
     "psycopg[binary]>=3.2.3",
+    "pydantic>=2.9.2",
     "pydantic-settings>=2.5.2",
     "sqlmodel>=0.0.22",
     "typer>=0.12.5",
@@ -77,6 +78,7 @@ exclude = [
 # TESTING
 [tool.pytest.ini_options]
 addopts = "-s"
+console_output_style = "progress-even-when-capture-no"
 
 [tool.coverage.run]
 omit = [
