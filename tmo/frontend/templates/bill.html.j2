@@ -8,7 +8,7 @@
         <h1>
             <span class="title" id="date"></span>
             <span class="title">&nbsp;&nbsp;&mdash;&nbsp;</span>
-            <span class="title has-text-info">${{ "{:.02f}".format(total) }}</span>
+            <span class="title has-text-info">${{ "{:.02f}".format(bill.total) }}</span>
         </h1>
     </div>
     <br>
@@ -44,25 +44,23 @@
         <div id="details" class="container is-centered">
             <table class="table is-bordered is-hoverable is-fullwidth" style="white-space: nowrap;">
                 <thead class="bill-header">
-                    {% for values in table.header.values() %}
                     <tr>
                         <th></th>
-                        {% for subscriber in values %}
+                        {% for subscriber in bill.names %}
                         <th class="has-text-weight-semibold">{{ subscriber }}</th>
                         {% endfor %}
                     </tr>
-                    {% endfor %}
                 </thead>
                 <tbody>
-                    {% for (name, key), values in table.charges.items() %}
-                    <tr id="{{ name }}">
-                        <th>{{ key }}</th>
-                        {% for value in values %}
+                    {% for field, element in bill.fields_in_section('charges') %}
+                    <tr id="{{ element.id }}">
+                        <th>{{ element.title }}</th>
+                        {% for charge in bill.get(field) %}
                         <td>
                             <div class="currency">
                                 <span class="currency-symbol">$</span>
-                                <span class="currency-value {{ value | currency_class }}">
-                                    {{ "{0:.2f}".format(value) if value != 0 else "—" }}
+                                <span class="currency-value {{ charge | currency_class }}">
+                                    {{ "{0:.2f}".format(charge) if charge != 0 else "—" }}
                                 </span>
                             </div>
                         </td>
@@ -70,41 +68,41 @@
                     </tr>
                     {% endfor %}
                     <tr class="blank-row"></tr>
-                    {% for (name, key), values in table.usage.items() %}
-                    <tr id="{{ name }}">
-                        <th>{{ key }}</th>
-                        {% for value in values %}
+                    {% for field, element in bill.fields_in_section('usage') %}
+                    <tr id="{{ element.id }}">
+                        <th>{{ element.title }}</th>
+                        {% for usage in bill.get(field) %}
                         <td class="usage">
-                            <span>{{ value }}</span>
+                            <span>{{ usage }}</span>
                         </td>
                         {% endfor %}
                     </tr>
                     {% endfor %}
                     <tr class="blank-row"></tr>
-                    {% for (name, key), values in table.summary.items() %}
-                    <tr id="{{ name }}">
-                        <th>{{ key }}</th>
-                        {% for value in values %}
-                        <td>
+                    {% for _, element in bill.fields_in_section('summary') %}
+                    <tr id="{{ element.id }}">
+                        <th>{{ element.title }}</th>
+                        {% for charge in bill.iter_totals() %}
+                        <td class="{{ charge.klass }}">
                             <div class="currency">
                                 <span class="currency-symbol">$</span>
-                                <span class="currency-value {{ value | currency_class }}">
-                                    {{ "{0:.2f}".format(value) if value != 0 else "—" }}
+                                <span class="currency-value">
+                                    {{ "{0:.2f}".format(charge.total) if charge.total != 0 else "—" }}
                                 </span>
                             </div>
                         </td>
                         {% endfor %}
                     </tr>
                     {% endfor %}
-                    {% for key, values in table.recap.items() %}
-                    <tr id="recap" class="has-text-grey-light">
-                        <th>{{ key }}</th>
-                        {% for value in values %}
+                    {% for field, element in bill.fields_in_section('recap') %}
+                    <tr id="{{ element.id }}" class="has-text-grey-light">
+                        <th>{{ element.title }}</th>
+                        {% for charge in bill.get(field) %}
                         <td>
                             <div class="currency">
                                 <span class="currency-symbol">$</span>
                                 <span class="currency-value">
-                                    {{ "{0:.2f}".format(value) if value != 0 else "—" }}
+                                    {{ "{0:.2f}".format(charge) if charge != 0 else "—" }}
                                 </span>
                             </div>
                         </td>
@@ -116,7 +114,7 @@
             <div class="columns">
                 <div class="column">
                     <p class="title is-4 my-2">Shared Charges</p>
-                    {% if table.shared %}
+                    {% if bill.charges %}
                         <table class="table is-striped is-hoverable" style="white-space: nowrap;">
                             <thead>
                                 <tr>
@@ -126,15 +124,15 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for shared in table.shared %}
+                                {% for charge in bill.charges %}
                                 <tr class="shared">
-                                    <td>{{ shared.name.title() }}</td>
+                                    <td>{{ charge.name.title() }}</td>
                                     <td>
                                         <div class="currency">
                                             <span class="currency-symbol">$</span>
                                             <span
-                                                class="currency-value has-text-right {{ shared.present | currency_class }}">
-                                                {{ "{0:.2f}".format(shared.present) }}
+                                                class="currency-value has-text-right {{ charge.present | currency_class }}">
+                                                {{ "{0:.2f}".format(charge.present) }}
                                             </span>
                                         </div>
                                     </td>
@@ -142,7 +140,7 @@
                                         <div class="currency has-text-grey-light">
                                             <span class="currency-symbol">$</span>
                                             <span class="currency-value has-text-right">
-                                                {{ "{0:.2f}".format(shared.previous) }}
+                                                {{ "{0:.2f}".format(charge.previous) }}
                                             </span>
                                         </div>
                                     </td>
@@ -161,9 +159,9 @@
                                 <p class="title has-text-centered my-1 has-text-info">Summary</p>
                                 <table class="table is-hoverable is-fullwidth" style="white-space: nowrap;">
                                     <tbody>
-                                        {% for name, amount in table.owed.items() %}
+                                        {% for payer, amount in bill.owed.items() %}
                                         <tr>
-                                            <td class="has-text-weight-semibold">From {{ name }}</td>
+                                            <td class="has-text-weight-semibold">From {{ payer }}</td>
                                             <td>
                                                 <div class="currency">
                                                     <span class="currency-symbol">$</span>
@@ -242,6 +240,14 @@
 
     span.currency-value.is-currency-negative {
         color: #b3001bff;
+    }
+
+    td.is-currency-more {
+        background-color: #FF3F3F;
+    }
+
+    td.is-currency-less {
+        background-color: #4AE27A;
     }
 
     span.currency-value.is-currency-negative::before {

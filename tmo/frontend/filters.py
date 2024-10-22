@@ -1,13 +1,11 @@
 import collections
-import dataclasses
 import datetime
 import decimal
 import typing
 
-from pydantic import BaseModel, Field, field_validator, model_validator, validate_call
+from pydantic import BaseModel, Field, dataclasses, field_validator, model_validator, validate_call
 
 from ..config import config
-from ..db.models import Render
 from ..db.schemas import BillRender, SubscriberReadWithDetails
 
 Unset = object()
@@ -21,6 +19,20 @@ class Element:
     id: str | object = Unset
     field: str | object = Unset
     is_currency: bool = False
+
+
+class Totals(BaseModel):
+    total: decimal.Decimal
+    recap: decimal.Decimal
+    klass: str = ""
+
+    @model_validator(mode="after")
+    def _assign_klass(self) -> typing.Self:
+        if self.total < self.recap:
+            self.klass = "is-currency-less"
+        if self.total > self.recap:
+            self.klass = "is-currency-more"
+        return self
 
 
 _list = Field(default_factory=list)
@@ -47,7 +59,7 @@ class BillsRender(BaseModel):
     messages: typing.Annotated[list[int], _list, Element("Messages (#)", "usage")]
     data: typing.Annotated[list[decimal.Decimal], _list, Element("Data (GB)", "usage")]
 
-    summary: typing.Annotated[list[decimal.Decimal], _list, Element("Total Charges", "summary", field="total")]
+    totals: typing.Annotated[list[decimal.Decimal], _list, Element("Total Charges", "summary", field="total")]
     recap: typing.Annotated[list[decimal.Decimal], _list, Element("(Last Month)", "recap", field=Skip)]
 
     @field_validator("month", mode="after")
@@ -68,7 +80,7 @@ class BillsRender(BaseModel):
 
     @property
     def names(self) -> typing.Iterator[str]:
-        yield from (subscriber.name for subscriber in self.current.subscribers)
+        yield from (_split(subscriber.name) for subscriber in self.current.subscribers)
 
     @property
     def owed(self) -> dict[str, decimal.Decimal]:
@@ -80,7 +92,11 @@ class BillsRender(BaseModel):
                 continue
 
             for dependent in config.frontend.dependents[subscriber.number]:
-                owed[subscriber.name] += self._lookup_subscriber(number=dependent).details.total
+                try:
+                    owed[_split(subscriber.name)] += self._lookup_subscriber(number=dependent).details.total
+
+                except LookupError:
+                    continue
 
         return owed
 
@@ -159,6 +175,10 @@ class BillsRender(BaseModel):
 
         yield from getattr(self, field)
 
+    def iter_totals(self) -> typing.Iterator[Totals]:
+        for total, recap in zip(self.totals, self.recap):
+            yield Totals(total=total, recap=recap)
+
     @classmethod
     def get_element(cls, field: str) -> Element:
         info = cls.model_fields[field]
@@ -178,59 +198,6 @@ class BillsRender(BaseModel):
 
 
 @validate_call
-def generate_table(
-    data: list[BillRender], dependents: dict[str, list[str]]
-) -> tuple[dict[str, dict[str, list[typing.Any]]], dict[str, float], float]:
-    present, previous = data
-
-    total = present.total
-
-    resp = {section: collections.defaultdict(list) for section in BillRender.sections}
-    resp.update(shared=[], owed={name: 0.0 for name in dependents})
-    _lookup = {name: target for target, names in dependents.items() for name in names}
-
-    split = sum([charge.total for charge in present.charges if charge.split]) / len(present.subscribers)
-
-    for subscriber in present.subscribers:
-        for key, schema in subscriber.fields_by_annotation(klass=Render):
-            resp[schema.section][(key, schema.name)].append(schema.formatter(getattr(subscriber, key)))
-
-        for key, schema in subscriber.details.fields_by_annotation(klass=Render):
-            resp[schema.section][(key, schema.name)].append(schema.formatter(getattr(subscriber.details, key)))
-
-            if key == "total":
-                for past_subscriber in previous.subscribers:
-                    if subscriber.id == past_subscriber.id:
-                        resp["recap"]["(Last Month)"].append(schema.formatter(getattr(past_subscriber.details, key)))
-                        break
-                else:
-                    resp["recap"]["(Last Month)"].append(schema.formatter(0))
-
-        if target := _lookup.get(_split(subscriber.name)):
-            resp["owed"][target] += float(subscriber.details.total) + float(split)
-
-    for charge in present.charges:
-        values = {"name": charge.name, "present": charge.total, "previous": 0}
-
-        for past_charge in previous.charges:
-            if past_charge.name == charge.name:
-                values["previous"] = past_charge.total
-                break
-
-        resp["shared"].append(values)
-
-    resp["owed"] = {key: value for key, value in resp["owed"].items() if value != 0}
-
-    from rich import print
-
-    print(present)
-
-    print(resp)
-
-    return total, resp
-
-
-@validate_call
 def generate_charts(data: BillRender, colors: dict[str, str]) -> dict[str, dict[str, str | int | float]]:
     resp = collections.defaultdict(dict)
 
@@ -239,6 +206,10 @@ def generate_charts(data: BillRender, colors: dict[str, str]) -> dict[str, dict[
             resp[key][subscriber.name] = float(getattr(subscriber.details, key))
 
         resp["colors"][subscriber.name] = colors[_split(subscriber.name)]
+
+    from rich import print
+
+    print(resp)
 
     return resp
 
