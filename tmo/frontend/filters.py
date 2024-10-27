@@ -81,11 +81,14 @@ class BillsRender(BaseModel):
         return self.current.total
 
     @property
-    def months(self) -> typing.Annotated[tuple[datetime.date, datetime.date], Element("date", "Date")]:
-        return (
-            (self.month - datetime.timedelta(days=1)).replace(day=1),
-            (self.month + datetime.timedelta(days=45)).replace(day=1),
-        )
+    def months(self) -> typing.Annotated[tuple[datetime.date, datetime.date | None], Element("date", "Date")]:
+        last = (self.month.replace(day=1) - datetime.timedelta(days=5)).replace(day=1)
+        next = (self.month.replace(day=28) + datetime.timedelta(days=5)).replace(day=1)
+
+        if next > datetime.date.today():
+            return last, None
+
+        return last, next
 
     @property
     def names(self) -> typing.Iterator[str]:

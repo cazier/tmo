@@ -107,15 +107,26 @@ class TestBillsRender:
     @pytest.mark.parametrize(
         ("current", "last", "next"),
         (
-            ("2024-01-01", "2023-12-01", "2024-02-01"),
-            ("2024-06-01", "2024-05-01", "2024-07-01"),
-            ("2024-12-01", "2024-11-01", "2025-01-01"),
+            ("2001-01-01", "2000-12-01", "2001-02-01"),
+            ("2001-06-01", "2001-05-01", "2001-07-01"),
+            ("2001-12-01", "2001-11-01", "2002-01-01"),
+            ("2001-11-28", "2001-10-01", "2001-12-01"),
+            (
+                datetime.date.today(),
+                (datetime.date.today().replace(day=1) - datetime.timedelta(days=1)).replace(day=1),
+                None,
+            ),
         ),
-        ids=("january", "june", "december"),
+        ids=("january", "june", "december", "late", "now"),
     )
-    def test_months_calculation(self, current: str, last: str, next: str):
+    def test_months_calculation(
+        self, current: str | datetime.date, last: str | datetime.date, next: str | datetime.date
+    ):
+        if isinstance(current, datetime.date) and isinstance(last, datetime.date):
+            current, last = current.isoformat(), last.isoformat()
+
         b = bill(month=datetime.date.fromisoformat(current))
-        assert b.months == (datetime.date.fromisoformat(last), datetime.date.fromisoformat(next))
+        assert b.months == (datetime.date.fromisoformat(last), datetime.date.fromisoformat(next) if next else next)
 
     def test_month_validator(self, faker: faker.Faker):
         month = faker.date_object()
