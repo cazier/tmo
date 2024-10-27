@@ -1,9 +1,20 @@
 import datetime
+import decimal
 import typing
 
+from pydantic import PlainSerializer
 from sqlmodel import Field, Relationship, SQLModel
 
-from .utilities import AnnotatedSQLModel, JsonDecimal, Render, decimal_field
+JsonDecimal = typing.Annotated[decimal.Decimal, PlainSerializer(float, return_type=float, when_used="json")]
+
+
+def decimal_field(
+    default: decimal.Decimal = decimal.Decimal("0"),
+    max_digits: int = 8,
+    decimal_places: int = 2,
+    **kwargs: typing.Any,
+) -> typing.Any:
+    return Field(default=default, max_digits=max_digits, decimal_places=decimal_places, **kwargs)
 
 
 class BaseModel(SQLModel):
@@ -17,30 +28,30 @@ class BillSubscriberLink(SQLModel, table=True):
 
 
 ## Base Models (containing actual scalar values)
-class SubscriberScalar(AnnotatedSQLModel):
+class SubscriberScalar(SQLModel):
     number: str = Field(unique=True, max_length=20)
-    name: typing.Annotated[str, Render("header", 1, formatter=lambda k: k.split(" ")[0])]
+    name: str
 
 
-class BillScalar(AnnotatedSQLModel):
+class BillScalar(SQLModel):
     date: datetime.date = Field(unique=True)
     total: JsonDecimal = decimal_field()
 
 
-class DetailScalar(AnnotatedSQLModel):
-    phone: typing.Annotated[JsonDecimal, Render("charges", 1, name="Phone Cost"), "$"] = decimal_field()
-    line: typing.Annotated[JsonDecimal, Render("charges", 2, name="Line Cost"), "$"] = decimal_field()
-    insurance: typing.Annotated[JsonDecimal, Render("charges", 3, name="Insurance"), "$"] = decimal_field()
-    usage: typing.Annotated[JsonDecimal, Render("charges", 4, name="Usage Charges"), "$"] = decimal_field()
+class DetailScalar(SQLModel):
+    phone: typing.Annotated[JsonDecimal, "$"] = decimal_field()
+    line: typing.Annotated[JsonDecimal, "$"] = decimal_field()
+    insurance: typing.Annotated[JsonDecimal, "$"] = decimal_field()
+    usage: typing.Annotated[JsonDecimal, "$"] = decimal_field()
 
-    total: typing.Annotated[JsonDecimal, Render("summary", 1, name="Total Charges")] = decimal_field()
+    total: JsonDecimal = decimal_field()
 
-    minutes: typing.Annotated[int, Render("usage", 1, name="Minutes (min)"), "#"] = Field(default=0)
-    messages: typing.Annotated[int, Render("usage", 2, name="Messages (#)"), "#"] = Field(default=0)
-    data: typing.Annotated[JsonDecimal, Render("usage", 3, name="Data (GB)"), "#"] = decimal_field()
+    minutes: typing.Annotated[int, "#"] = Field(default=0)
+    messages: typing.Annotated[int, "#"] = Field(default=0)
+    data: typing.Annotated[JsonDecimal, "#"] = decimal_field()
 
 
-class ChargeScalar(AnnotatedSQLModel):
+class ChargeScalar(SQLModel):
     name: str
     split: bool = Field(default=False)
     total: typing.Annotated[JsonDecimal, "$"] = decimal_field()
