@@ -145,7 +145,7 @@ class TestBillsRender:
         b = filters.BillsRender.model_construct(current=NS(subscribers=[NS(name=name) for name in names]))
         assert list(b.names) == [*names]
 
-    def test_total(self, faker: faker.Faker):
+    def test_total(self):
         b = bill(total=100)
         assert b.total == decimal.Decimal(100)
 

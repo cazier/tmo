@@ -99,8 +99,7 @@ class BillsRender(BaseModel):
         owed: dict[str, decimal.Decimal] = collections.defaultdict(decimal.Decimal)
 
         for subscriber in self.current.subscribers:
-            dependents = config.frontend.dependents.get(subscriber.number, [])
-            if not dependents:
+            if not config.frontend.dependents.get(subscriber.number):
                 continue
 
             for dependent in config.frontend.dependents[subscriber.number]:
