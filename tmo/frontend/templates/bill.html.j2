@@ -11,7 +11,7 @@
             </a>
             <span class="title" id="date"></span>
             <span class="title">&nbsp;&nbsp;&mdash;&nbsp;</span>
-            <span class="title has-text-info">${{ "{:.02f}".format(bill.total) }}</span>
+            <span class="title has-text-info-legacy">${{ "{:.02f}".format(bill.total) }}</span>
             {% if bill.months[1] %}
                 <a href="/bill/{{ bill.months[1].strftime('%Y/%m') }}">
                     <span class="icon is-small"><i class="fas fa-lg fa-caret-right" aria-hidden="true"></i></span>
@@ -164,7 +164,7 @@
                     <div class="tile is-ancestor">
                         <div class="tile is-parent">
                             <article class="tile is-child box py-1">
-                                <p class="title has-text-centered my-1 has-text-info">Summary</p>
+                                <p class="title has-text-centered my-1 has-text-info-legacy">Summary</p>
                                 <table class="table is-hoverable is-fullwidth" style="white-space: nowrap;">
                                     <tbody>
                                         {% for payer, amount in bill.owed.items() %}
