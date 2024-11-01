@@ -3,7 +3,7 @@ import typing
 
 from pydantic import model_validator
 
-from tmo.db.models.db import Bill, BillScalar, ChargeScalar, DetailScalar, SubscriberScalar
+from tmo.db.models.tables import Bill, BillScalar, ChargeScalar, DetailScalar, SubscriberScalar
 
 
 class BillRead(BillScalar):

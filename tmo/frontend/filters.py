@@ -6,7 +6,7 @@ import typing
 from pydantic import BaseModel, Field, dataclasses, field_validator, model_validator
 
 from ..config import config
-from ..db.schemas import BillRender, SubscriberReadWithDetails
+from ..db.responses import BillRender, SubscriberReadWithDetails
 
 Unset = object()
 Skip = object()
