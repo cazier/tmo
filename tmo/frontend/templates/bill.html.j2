@@ -7,15 +7,13 @@
     <div class="container">
         <h1>
             <a href="/bill/{{ bill.months[0].strftime('%Y/%m') }}">
-                <span class="icon is-small"><i class="fas fa-lg fa-caret-left" aria-hidden="true"></i></span>
+                <span class="icon is-small"><i class="fas fa-lg fa-less-than" aria-hidden="true"></i></span>
             </a>
-            <span class="title" id="date"></span>
-            <span class="title">&nbsp;&nbsp;&mdash;&nbsp;</span>
-            <span class="title has-text-info-legacy">${{ "{:.02f}".format(bill.total) }}</span>
-            {% if bill.months[1] %}
-                <a href="/bill/{{ bill.months[1].strftime('%Y/%m') }}">
-                    <span class="icon is-small"><i class="fas fa-lg fa-caret-right" aria-hidden="true"></i></span>
-                </a>
+            <span class="title px-1"><span id="date"></span><span>&ensp;&mdash;&ensp;</span><span class="has-text-info-legacy">${{ "{:.02f}".format(bill.total) }}</span></span>
+            {%- if bill.months[1] -%}
+            <a href="/bill/{{ bill.months[1].strftime('%Y/%m') }}">
+                <span class="icon is-small"><i class="fas fa-lg fa-greater-than" aria-hidden="true"></i></span>
+            </a>
             {% endif %}
         </h1>
     </div>
