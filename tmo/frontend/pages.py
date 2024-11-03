@@ -1,30 +1,28 @@
-import datetime
 import http
 import pathlib
-from typing import Optional
 
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from httpx import AsyncClient
 
 from tmo import config
-from tmo.db.api import router as api
-from tmo.frontend.filters import BillsRender, currency_class
+
+# from tmo.db.api import router as api
+from tmo.frontend.filters import currency_class
 
 templates = Jinja2Templates(directory=pathlib.Path(__file__).parent.joinpath("templates"))
 templates.env.globals.update(domain="T-Mobile Bills", cdn=not config.api.debug)
 templates.env.filters.update(currency_class=currency_class)
 
-router = APIRouter(include_in_schema=False)
+frontend = APIRouter(include_in_schema=False)
 
 
 def _error_printer(code: int, request: Request) -> HTMLResponse:
     return templates.TemplateResponse(request, "error.html.j2", {"status": http.HTTPStatus(code)}, code)
 
 
-@router.get("/bill")
-@router.get("/bill/{year}/{month}")
+@frontend.get("/bill")
+@frontend.get("/bill/{year}/{month}")
 async def bill(*, year: Optional[int] = None, month: Optional[int] = None, request: Request) -> HTMLResponse:
     if year and month:
         date = datetime.date(year, month, 1)
