@@ -2,16 +2,19 @@
 
 import calendar
 import datetime
+import pathlib
 import random
 import typing
 
 import faker
+import fastapi.testclient
 import pydantic
 import pytest
 from sqlmodel import Session, SQLModel
 
 from tests.helpers import phone_number
 from tmo import config
+from tmo.db.models import Bill, Subscriber
 
 USERS: int = 10
 YEARS: int = 5
@@ -62,13 +65,10 @@ def database():
     yield _db
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def session():
-    with config.patch(database={"dialect": "memory"}):
-        from tmo.db.engines import start_engine
-
-        engine = start_engine()
-        SQLModel.metadata.create_all(engine)
+    with config.patch(database={"dialect": "memory", "echo": True}):
+        from tmo.db.engines import engine
 
         with Session(engine) as _session:
             yield _session
@@ -76,5 +76,24 @@ def session():
         SQLModel.metadata.drop_all(engine)
 
 
-def fields(model: pydantic.BaseModel) -> dict[str, pydantic.fields.FieldInfo]:
-    return model.model_fields
+@pytest.fixture(scope="session")
+def client(session: Session, tmp_path_factory: pytest.TempPathFactory):
+    def _get_session_test():
+        return session
+
+    path = tmp_path_factory.getbasetemp().joinpath("config.toml")
+
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setenv("TMO_UVICORN_CONFIG_PATH", str(path))
+        path.write_text("", encoding="utf8")
+
+        from tmo.dependencies import get_session
+        from tmo.web import app
+
+        with fastapi.testclient.TestClient(app) as client:
+            app.dependency_overrides[get_session] = _get_session_test
+            yield client
+
+
+# def fields(model: pydantic.BaseModel) -> dict[str, pydantic.fields.FieldInfo]:
+#     return model.model_fields
