@@ -2,19 +2,14 @@
 
 import calendar
 import datetime
-import pathlib
 import random
 import typing
 
-import faker
 import fastapi.testclient
-import pydantic
 import pytest
 from sqlmodel import Session, SQLModel
 
-from tests.helpers import phone_number
 from tmo import config
-from tmo.db.models import Bill, Subscriber
 
 USERS: int = 10
 YEARS: int = 5
@@ -22,26 +17,26 @@ SERVICES: tuple[str, ...] = ("netflix", "hulu")
 FIELDS: tuple[str, ...] = ("phone", "line", "insurance", "usage", "minutes", "messages", "data")
 
 
-@pytest.fixture(autouse=True, scope="session")
-def _setup_database(subscribers: list[dict[str, str]], bills: set[datetime.date], database: dict[str, typing.Any]):
-    def _numbers() -> dict[str, int | float]:
-        def _number(kind: str) -> int | float:
-            match kind:
-                case "phone" | "line" | "insurance" | "usage" | "data":
-                    return float(f"{random.randint(0, 30)}.{random.randint(0, 99)}")
+# @pytest.fixture(autouse=True, scope="session")
+# def _setup_database(subscribers: list[dict[str, str]], bills: set[datetime.date], database: dict[str, typing.Any]):
+#     def _numbers() -> dict[str, int | float]:
+#         def _number(kind: str) -> int | float:
+#             match kind:
+#                 case "phone" | "line" | "insurance" | "usage" | "data":
+#                     return float(f"{random.randint(0, 30)}.{random.randint(0, 99)}")
 
-                case _:  # "minutes" | "messages":
-                    return random.randint(0, 10000)
+#                 case _:  # "minutes" | "messages":
+#                     return random.randint(0, 10000)
 
-        return {key: _number(key) for key in FIELDS}
+#         return {key: _number(key) for key in FIELDS}
 
-    for month in bills:
-        database[month.strftime("%Y.%m.%d")] = {
-            "subscribers": [{**subscriber, **_numbers()} for subscriber in subscribers],
-            "other": {random.choices(SERVICES, [90, 10], k=1)[0]: random.randint(5, 10)},
-        }
+#     for month in bills:
+#         database[month.strftime("%Y.%m.%d")] = {
+#             "subscribers": [{**subscriber, **_numbers()} for subscriber in subscribers],
+#             "other": {random.choices(SERVICES, [90, 10], k=1)[0]: random.randint(5, 10)},
+#         }
 
-    yield
+#     yield
 
 
 @pytest.fixture(scope="session")
@@ -54,12 +49,6 @@ def bills():
 
 
 @pytest.fixture(scope="session")
-def subscribers():
-    _faker = faker.Faker()
-    return [{"number": phone_number(), "name": _faker.name(), "id": index + 1} for index in range(USERS)]
-
-
-@pytest.fixture(scope="session")
 def database():
     _db: dict[str, typing.Any] = {}
     yield _db
@@ -67,8 +56,10 @@ def database():
 
 @pytest.fixture(scope="session")
 def session():
-    with config.patch(database={"dialect": "memory", "echo": True}):
-        from tmo.db.engines import engine
+    with config.patch(database={"dialect": "memory"}):
+        from tmo.db.engines import start_engine
+
+        engine = start_engine()
 
         with Session(engine) as _session:
             yield _session

@@ -1,17 +1,17 @@
 # mypy: disable-error-code="no-untyped-def"
 import datetime
 
+import faker
 import pytest
-from faker import Faker
 from sqlmodel import Session, func, select
 
+import tests.helpers
 from tmo.db.models import Bill, Subscriber
 
 
 @pytest.fixture
-def subscriber(subscribers: list[dict[str, str]], session: Session) -> Subscriber:
-    [subscriber, *_] = subscribers
-    instance = Subscriber(**subscriber)
+def subscriber(session: Session) -> Subscriber:
+    instance = Subscriber(**tests.helpers.subscriber())
     session.add(instance)
     session.commit()
 
@@ -19,9 +19,8 @@ def subscriber(subscribers: list[dict[str, str]], session: Session) -> Subscribe
 
 
 @pytest.fixture
-def bill(bills: set[datetime.date], session: Session) -> Bill:
-    [date, *_] = list(bills)
-    instance = Bill(date=date)
+def bill(session: Session) -> Bill:
+    instance = Bill(**tests.helpers.bill())
     session.add(instance)
     session.commit()
 
@@ -29,61 +28,55 @@ def bill(bills: set[datetime.date], session: Session) -> Bill:
 
 
 class TestSubscriber:
-    def test_add_subscriber(self, subscribers: list[dict[str, str]], session: Session):
-        [subscriber, *_] = subscribers
-
-        assert session.exec(select(func.count()).select_from(Subscriber)).first() == 0
+    def test_add_subscriber(self, session: Session):
+        subscriber = tests.helpers.subscriber()
+        assert session.exec(select(Subscriber).where(Subscriber.number == subscriber["number"])).first() is None
 
         session.add(Subscriber(**subscriber))
-        db_subscriber = session.get_one(Subscriber, 1)
+        db_subscriber = session.exec(select(Subscriber).where(Subscriber.number == subscriber["number"])).one()
 
-        assert session.exec(select(func.count()).select_from(Subscriber)).first() == 1
-        assert db_subscriber.id == 1
-        assert db_subscriber.count == 0
-        assert db_subscriber.name == subscriber["name"]
-        assert db_subscriber.number == subscriber["number"]
+        assert subscriber == db_subscriber.model_dump()
 
     def test_delete_subscriber(self, subscriber: Subscriber, session: Session):
-        db_subscriber = session.exec(select(Subscriber).where(Subscriber.name == subscriber.name)).one()
+        rows = session.exec(select(func.count()).select_from(Subscriber)).one()
+        db_subscriber = session.exec(select(Subscriber).where(Subscriber.number == subscriber.number)).one()
 
         session.delete(db_subscriber)
         session.commit()
 
-        assert session.exec(select(func.count()).select_from(Subscriber)).first() == 0
+        assert session.exec(select(func.count()).select_from(Subscriber)).one() < rows
 
-    def test_edit_subscriber(self, subscriber: Subscriber, session: Session, faker: Faker):
-        db_subscriber = session.exec(select(Subscriber).where(Subscriber.name == subscriber.name)).one()
+    def test_edit_subscriber(self, subscriber: Subscriber, session: Session, faker: faker.Faker):
+        db_subscriber = session.exec(select(Subscriber).where(Subscriber.number == subscriber.number)).one()
         db_subscriber.name = (name := faker.name())
 
         session.add(db_subscriber)
         session.commit()
 
-        updated = session.get(Subscriber, db_subscriber.id)
+        updated = session.get_one(Subscriber, db_subscriber.id)
         assert updated.name == name
 
 
 class TestBill:
     def test_add_bill(self, bills: set[datetime.date], session: Session):
-        [date, *_] = list(bills)
+        bill = tests.helpers.bill()
+        assert session.exec(select(Bill).where(Bill.date == bill["date"])).first() is None
 
-        assert session.exec(select(func.count()).select_from(Bill)).first() == 0
+        session.add(Bill(**bill))
+        db_bill = session.exec(select(Bill).where(Bill.date == bill["date"])).one()
 
-        session.add(Bill(date=date))
-        db_bill = session.get_one(Bill, 1)
-
-        assert session.exec(select(func.count()).select_from(Bill)).first() == 1
-        assert db_bill.id == 1
-        assert db_bill.date == date
+        assert bill == db_bill.model_dump()
 
     def test_delete_bill(self, bill: Bill, session: Session):
+        rows = session.exec(select(func.count()).select_from(Bill)).one()
         db_bill = session.exec(select(Bill).where(Bill.date == bill.date)).one()
 
         session.delete(db_bill)
         session.commit()
 
-        assert session.exec(select(func.count()).select_from(Bill)).first() == 0
+        assert session.exec(select(func.count()).select_from(Bill)).one() < rows
 
-    def test_edit_bill_date(self, bill: Bill, session: Session, faker: Faker):
+    def test_edit_bill_date(self, bill: Bill, session: Session, faker: faker.Faker):
         db_bill = session.exec(select(Bill).where(Bill.date == bill.date)).one()
 
         with pytest.raises(AttributeError, match=r"(?i)Cannot change the date.*"):
@@ -92,15 +85,15 @@ class TestBill:
         session.add(db_bill)
         session.commit()
 
-        updated = session.get(Bill, db_bill.id)
+        updated = session.get_one(Bill, db_bill.id)
         assert updated.date == bill.date
 
-    def test_edit_bill_subscriber(self, subscriber: Subscriber, bill: Bill, session: Session, faker: Faker):
+    def test_edit_bill_subscriber(self, subscriber: Subscriber, bill: Bill, session: Session, faker: faker.Faker):
         db_bill = session.exec(select(Bill).where(Bill.date == bill.date)).one()
         db_bill.subscribers.append(subscriber)
 
         session.add(db_bill)
         session.commit()
 
-        updated = session.get(Bill, db_bill.id)
+        updated = session.get_one(Bill, db_bill.id)
         assert updated.subscribers[0].name == subscriber.name
