@@ -18,7 +18,7 @@ def decimal_field(
 
 
 class BaseModel(SQLModel):
-    id: typing.Optional[int] = Field(default=None, primary_key=True)
+    id: int = Field(default=None, primary_key=True)
 
 
 ## Many-to-Many Relationship Links
