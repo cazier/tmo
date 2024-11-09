@@ -26,6 +26,7 @@ def serve(
             port=port,
             reload=reload,
             reload_includes=["*.j2", "*.js", "config.toml"] if reload else None,
+            reload_excludes=["./tests/*"] if reload else None,
             env_file=root,
         )
 
