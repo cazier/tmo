@@ -53,7 +53,7 @@ def db_print(values: typing.Any, capture: bool = False, **kwargs: typing.Any) ->
 
     Args:
         values (typing.Any): database statements
-        capture (bool, optional): capture and return the colored/formatted values Defaults to False.
+        capture (bool, optional): capture and return the colored/formatted values. Defaults to False.
 
     Returns:
         str | None: captured pretty values (if `capture` is set to True)
