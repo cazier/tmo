@@ -1,6 +1,3 @@
-PRAGMA foreign_keys=OFF;
-BEGIN TRANSACTION;
-
 INSERT INTO bill VALUES( 1, "2021-05-01", 572.31);
 INSERT INTO bill VALUES( 2, "2021-06-01", 731.88);
 INSERT INTO bill VALUES( 3, "2021-07-01", 716.14);
@@ -242,43 +239,41 @@ INSERT INTO detail VALUES(106, 30.89, 15.79,  6.99,  2.69,  56.36, 529, 187, 15.
 INSERT INTO detail VALUES(107, 22.83, 19.67,  3.81,  0.05,  46.81, 276, 419, 20.649, 10,  1);
 INSERT INTO detail VALUES(108,  2.06, 10.89,  8.04,  3.02,  25.09,  27, 257, 17.812, 10, 10);
 
-INSERT INTO charge VALUES( 1, "service-b", 0, 16.59,  1)
-INSERT INTO charge VALUES( 2, "service-c", 0,  1.28,  1)
-INSERT INTO charge VALUES( 3, "taxes",     1, 12.37,  1)
-INSERT INTO charge VALUES( 4, "service-a", 0,  6.23,  2)
-INSERT INTO charge VALUES( 5, "service-b", 0, 10.50,  2)
-INSERT INTO charge VALUES( 6, "service-c", 0, 20.30,  2)
-INSERT INTO charge VALUES( 7, "taxes",     1,  6.31,  2)
-INSERT INTO charge VALUES( 8, "service-a", 0,  5.94,  3)
-INSERT INTO charge VALUES( 9, "service-b", 0,  2.74,  3)
-INSERT INTO charge VALUES(10, "service-c", 0,  9.60,  3)
-INSERT INTO charge VALUES(11, "taxes",     1,  0.36,  3)
-INSERT INTO charge VALUES(12, "service-a", 0,  7.92,  4)
-INSERT INTO charge VALUES(13, "service-b", 0, 21.44,  4)
-INSERT INTO charge VALUES(14, "service-c", 0, 29.52,  4)
-INSERT INTO charge VALUES(15, "taxes",     1,  2.95,  4)
-INSERT INTO charge VALUES(16, "service-a", 0, 21.20,  5)
-INSERT INTO charge VALUES(17, "service-b", 0, 19.48,  5)
-INSERT INTO charge VALUES(18, "service-c", 0, 28.62,  5)
-INSERT INTO charge VALUES(19, "taxes",     1,  7.22,  5)
-INSERT INTO charge VALUES(20, "service-a", 0, 29.42,  6)
-INSERT INTO charge VALUES(21, "service-b", 0, 11.63,  6)
-INSERT INTO charge VALUES(22, "service-c", 0, 17.27,  6)
-INSERT INTO charge VALUES(23, "taxes",     1, 26.00,  6)
-INSERT INTO charge VALUES(24, "service-a", 0, 14.14,  7)
-INSERT INTO charge VALUES(25, "service-b", 0, 13.10,  7)
-INSERT INTO charge VALUES(26, "service-c", 0, 23.86,  7)
-INSERT INTO charge VALUES(27, "taxes",     1, 23.63,  7)
-INSERT INTO charge VALUES(28, "service-a", 0,  3.52,  8)
-INSERT INTO charge VALUES(29, "service-b", 0,  1.38,  8)
-INSERT INTO charge VALUES(30, "service-c", 0, 10.54,  8)
-INSERT INTO charge VALUES(31, "taxes",     1, 23.11,  8)
-INSERT INTO charge VALUES(32, "service-a", 0, 24.30,  9)
-INSERT INTO charge VALUES(33, "service-b", 0, 24.80,  9)
-INSERT INTO charge VALUES(34, "service-c", 0, 29.58,  9)
-INSERT INTO charge VALUES(35, "taxes",     1, 11.80,  9)
-INSERT INTO charge VALUES(36, "service-a", 0, 13.56, 10)
-INSERT INTO charge VALUES(37, "service-b", 0, 22.20, 10)
-INSERT INTO charge VALUES(38, "service-c", 0,  0.70, 10)
-
-COMMIT;
+INSERT INTO charge VALUES( 1, "service-b", 0, 16.59,  1);
+INSERT INTO charge VALUES( 2, "service-c", 0,  1.28,  1);
+INSERT INTO charge VALUES( 3, "taxes",     1, 12.37,  1);
+INSERT INTO charge VALUES( 4, "service-a", 0,  6.23,  2);
+INSERT INTO charge VALUES( 5, "service-b", 0, 10.50,  2);
+INSERT INTO charge VALUES( 6, "service-c", 0, 20.30,  2);
+INSERT INTO charge VALUES( 7, "taxes",     1,  6.31,  2);
+INSERT INTO charge VALUES( 8, "service-a", 0,  5.94,  3);
+INSERT INTO charge VALUES( 9, "service-b", 0,  2.74,  3);
+INSERT INTO charge VALUES(10, "service-c", 0,  9.60,  3);
+INSERT INTO charge VALUES(11, "taxes",     1,  0.36,  3);
+INSERT INTO charge VALUES(12, "service-a", 0,  7.92,  4);
+INSERT INTO charge VALUES(13, "service-b", 0, 21.44,  4);
+INSERT INTO charge VALUES(14, "service-c", 0, 29.52,  4);
+INSERT INTO charge VALUES(15, "taxes",     1,  2.95,  4);
+INSERT INTO charge VALUES(16, "service-a", 0, 21.20,  5);
+INSERT INTO charge VALUES(17, "service-b", 0, 19.48,  5);
+INSERT INTO charge VALUES(18, "service-c", 0, 28.62,  5);
+INSERT INTO charge VALUES(19, "taxes",     1,  7.22,  5);
+INSERT INTO charge VALUES(20, "service-a", 0, 29.42,  6);
+INSERT INTO charge VALUES(21, "service-b", 0, 11.63,  6);
+INSERT INTO charge VALUES(22, "service-c", 0, 17.27,  6);
+INSERT INTO charge VALUES(23, "taxes",     1, 26.00,  6);
+INSERT INTO charge VALUES(24, "service-a", 0, 14.14,  7);
+INSERT INTO charge VALUES(25, "service-b", 0, 13.10,  7);
+INSERT INTO charge VALUES(26, "service-c", 0, 23.86,  7);
+INSERT INTO charge VALUES(27, "taxes",     1, 23.63,  7);
+INSERT INTO charge VALUES(28, "service-a", 0,  3.52,  8);
+INSERT INTO charge VALUES(29, "service-b", 0,  1.38,  8);
+INSERT INTO charge VALUES(30, "service-c", 0, 10.54,  8);
+INSERT INTO charge VALUES(31, "taxes",     1, 23.11,  8);
+INSERT INTO charge VALUES(32, "service-a", 0, 24.30,  9);
+INSERT INTO charge VALUES(33, "service-b", 0, 24.80,  9);
+INSERT INTO charge VALUES(34, "service-c", 0, 29.58,  9);
+INSERT INTO charge VALUES(35, "taxes",     1, 11.80,  9);
+INSERT INTO charge VALUES(36, "service-a", 0, 13.56, 10);
+INSERT INTO charge VALUES(37, "service-b", 0, 22.20, 10);
+INSERT INTO charge VALUES(38, "service-c", 0,  0.70, 10);

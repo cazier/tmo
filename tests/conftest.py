@@ -3,6 +3,7 @@ import collections
 import json
 import pathlib
 import re
+import typing
 
 import fastapi.testclient
 import pytest
@@ -17,8 +18,8 @@ FIELDS: tuple[str, ...] = ("phone", "line", "insurance", "usage", "minutes", "me
 
 
 @pytest.fixture(scope="session")
-def session():
-    with config.patch(database={"dialect": "memory", "echo": True}):
+def session(request: pytest.FixtureRequest):
+    with config.patch(database={"dialect": "memory", "echo": request.config.get_verbosity() > 0}):
         from tmo.db.engines import start_engine
 
         engine = start_engine(connect_args={"check_same_thread": False})
@@ -29,7 +30,7 @@ def session():
         SQLModel.metadata.drop_all(engine)
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def database(session: Session):
     raw_data = pathlib.Path(__file__).parent.joinpath("data.sql").read_text("ascii")
 
@@ -37,7 +38,7 @@ def database(session: Session):
     pattern = re.compile(r"INSERT INTO (\w+) VALUES\((.*)\);")
 
     for line in raw_data.splitlines():
-        session.exec(text(line))
+        session.exec(text(line))  # type: ignore[call-overload]
 
         if match := pattern.match(line):
             table, _fields = match.groups()
@@ -47,7 +48,7 @@ def database(session: Session):
 
 
 @pytest.fixture(scope="session")
-def client(session: Session, tmp_path_factory: pytest.TempPathFactory):
+def client(session: Session, tmp_path_factory: pytest.TempPathFactory, database: dict[str, typing.Any]):
     def _get_session_test():
         return session
 
