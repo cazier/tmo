@@ -35,14 +35,17 @@ def database(session: Session):
     raw_data = pathlib.Path(__file__).parent.joinpath("data.sql").read_text("ascii")
 
     data = collections.defaultdict(list)
-    pattern = re.compile(r"INSERT INTO (\w+) VALUES\((.*)\);")
+    pattern = re.compile(r"INSERT INTO (\w+) \((.*?)\) VALUES\((.*)\);")
 
     for line in raw_data.splitlines():
         session.exec(text(line))  # type: ignore[call-overload]
 
         if match := pattern.match(line):
-            table, _fields = match.groups()
-            data[table].append([json.loads(field.strip()) for field in _fields.strip().split(",")])
+            table, names, values = match.groups()
+            _names: list[str] = [json.loads(name.strip()) for name in names.split(",")]
+            _values: list[str | float | int] = [json.loads(value.strip()) for value in values.split(",")]
+
+            data[table].append({name: value for name, value in zip(_names, _values)})
 
     yield data
 
