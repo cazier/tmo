@@ -16,6 +16,10 @@ class ReadSubscriber(SubscriberScalar):
     id: int
 
 
+class _Details(DetailScalar):
+    id: int
+
+
 class ReadSubscribersDetail(SubscriberScalar):
     id: int
     detail: DetailScalar = pydantic.Field(alias="details")
@@ -26,10 +30,6 @@ class ReadSubscribersDetail(SubscriberScalar):
         if len(data) != 1:
             raise ValueError("Data must only contain one detail entry")
         return data[0]
-
-
-class _Details(DetailScalar):
-    id: int
 
 
 class ReadSubscribersDetails(SubscriberScalar):

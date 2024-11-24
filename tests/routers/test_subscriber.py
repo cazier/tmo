@@ -1,11 +1,13 @@
 # mypy: disable-error-code="has-type,no-untyped-def"
+import contextlib
 import random
 import typing
 
 import pytest
 from fastapi.testclient import TestClient
 
-from tmo.db.models.tables import Subscriber
+from tmo.db.models.tables import Detail, Subscriber
+from tmo.routers.subscriber import ReadSubscribersDetail
 
 pytestmark = [pytest.mark.usefixtures("database")]
 
@@ -29,6 +31,23 @@ def details(subscriber: Subscriber, database: dict[str, list[dict[str, typing.An
     return details
 
 
+@pytest.mark.parametrize(
+    ("count", "cm"),
+    (
+        (slice(1), contextlib.nullcontext()),
+        (slice(-1), pytest.raises(ValueError, match="Data must only contain one detail entry")),
+    ),
+    ids=("one", "all"),
+)
+def test_multiple_details(
+    count: slice, cm: typing.ContextManager[None], subscriber: Subscriber, details: list[dict[str, int | float]]
+):
+    _details = [Detail(**detail) for detail in details]
+
+    with cm:
+        ReadSubscribersDetail.model_validate({**subscriber.model_dump(mode="json"), "details": _details[count]})
+
+
 def test_get_subscribers(client: TestClient, database: dict[str, list[dict[str, typing.Any]]]):
     response = client.get("/api/subscriber")
     assert response.status_code == 200
@@ -46,3 +65,10 @@ def test_get_subscriber(client: TestClient, subscriber: Subscriber, details: lis
 
     assert json == data
     assert details == response.json()["details"]
+
+
+def test_get_subscriber_missing(client: TestClient, database: dict[str, list[dict[str, typing.Any]]]):
+    id = len(database["subscriber"]) + 1
+
+    response = client.get(f"/api/subscriber/{id}")
+    assert response.status_code == 404
