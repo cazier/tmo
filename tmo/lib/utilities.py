@@ -1,5 +1,7 @@
 import typing
 
+import sqlalchemy.orm.attributes
+
 _unset = object()
 
 
@@ -22,7 +24,11 @@ def get_attr_item(obj: typing.Any, *key: typing.Any, default: typing.Any = _unse
 
             raise KeyError(f"'{_key}'")
 
-    if result is _unset:
-        return default
-
     return get_attr_item(result, *_others, default=default)
+
+
+T = typing.TypeVar("T")
+
+
+def cast_as_qa(item: T) -> sqlalchemy.orm.attributes.QueryableAttribute[T]:
+    return typing.cast(sqlalchemy.orm.attributes.QueryableAttribute[T], item)

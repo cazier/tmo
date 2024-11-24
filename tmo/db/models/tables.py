@@ -48,7 +48,7 @@ class DetailScalar(SQLModel):
 
     minutes: typing.Annotated[int, "#"] = Field(default=0)
     messages: typing.Annotated[int, "#"] = Field(default=0)
-    data: typing.Annotated[JsonDecimal, "#"] = decimal_field()
+    data: typing.Annotated[JsonDecimal, "#"] = decimal_field(decimal_places=3)
 
 
 class ChargeScalar(SQLModel):
@@ -63,8 +63,6 @@ class Subscriber(SubscriberScalar, BaseModel, table=True):
 
     details: list["Detail"] = Relationship(back_populates="subscriber")
     bills: list["Bill"] = Relationship(back_populates="subscribers", link_model=BillSubscriberLink)
-
-    count: int = Field(default=0)
 
 
 class Bill(BillScalar, BaseModel, table=True):
