@@ -1,6 +1,4 @@
 # mypy: disable-error-code="no-untyped-def"
-import datetime
-
 import faker
 import pytest
 from sqlmodel import Session, func, select
@@ -10,12 +8,16 @@ from tmo.db.models import Bill, Subscriber
 
 
 @pytest.fixture
-def subscriber(session: Session) -> Subscriber:
-    instance = Subscriber(**tests.helpers.subscriber())
-    session.add(instance)
-    session.commit()
+def subscriber(faker: faker.Faker):
+    subscriber = Subscriber(name=faker.name(), number=tests.helpers.phone_number())
 
-    return instance
+    yield subscriber
+
+
+@pytest.fixture
+def add_subscriber(session: Session, subscriber: Subscriber):
+    session.add(subscriber)
+    session.commit()
 
 
 @pytest.fixture
@@ -28,15 +30,17 @@ def bill(session: Session) -> Bill:
 
 
 class TestSubscriber:
-    def test_add_subscriber(self, session: Session):
-        subscriber = tests.helpers.subscriber()
-        assert session.exec(select(Subscriber).where(Subscriber.number == subscriber["number"])).first() is None
+    def test_add_subscriber(self, subscriber: Subscriber, session: Session):
+        assert session.exec(select(Subscriber).where(Subscriber.number == subscriber.number)).first() is None
 
-        session.add(Subscriber(**subscriber))
-        db_subscriber = session.exec(select(Subscriber).where(Subscriber.number == subscriber["number"])).one()
+        session.add(subscriber)
+        session.commit()
 
-        assert subscriber == db_subscriber.model_dump()
+        db_subscriber = session.exec(select(Subscriber).where(Subscriber.number == subscriber.number)).one()
 
+        assert subscriber.model_dump() == db_subscriber.model_dump()
+
+    @pytest.mark.usefixtures("add_subscriber")
     def test_delete_subscriber(self, subscriber: Subscriber, session: Session):
         rows = session.exec(select(func.count()).select_from(Subscriber)).one()
         db_subscriber = session.exec(select(Subscriber).where(Subscriber.number == subscriber.number)).one()
@@ -46,6 +50,7 @@ class TestSubscriber:
 
         assert session.exec(select(func.count()).select_from(Subscriber)).one() < rows
 
+    @pytest.mark.usefixtures("add_subscriber")
     def test_edit_subscriber(self, subscriber: Subscriber, session: Session, faker: faker.Faker):
         db_subscriber = session.exec(select(Subscriber).where(Subscriber.number == subscriber.number)).one()
         db_subscriber.name = (name := faker.name())
@@ -58,11 +63,13 @@ class TestSubscriber:
 
 
 class TestBill:
-    def test_add_bill(self, bills: set[datetime.date], session: Session):
+    def test_add_bill(self, session: Session):
         bill = tests.helpers.bill()
         assert session.exec(select(Bill).where(Bill.date == bill["date"])).first() is None
 
         session.add(Bill(**bill))
+        session.commit()
+
         db_bill = session.exec(select(Bill).where(Bill.date == bill["date"])).one()
 
         assert bill == db_bill.model_dump()

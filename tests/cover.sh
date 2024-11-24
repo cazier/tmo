@@ -2,5 +2,5 @@
 set -x
 
 rm -rf htmlcov
-coverage run -m pytest "${@:-"tests"}" -s -v
+coverage run -m pytest -s "${@:-"tests"}"
 coverage html
