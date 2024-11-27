@@ -6,7 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from tmo.db.models.tables import Detail, Subscriber
-from tmo.routers.subscriber import ReadSubscribersDetail
+from tmo.routers.responses import ReadSubscriberDetail
 
 pytestmark = [pytest.mark.usefixtures("insert_into_database")]
 
@@ -31,13 +31,13 @@ def details(subscriber: Subscriber, database_values: dict[str, list[dict[str, ty
     ),
     ids=("one", "all"),
 )
-def test_multiple_details(
+def test_model_validate(
     count: slice, cm: typing.ContextManager[None], subscriber: Subscriber, details: list[dict[str, int | float]]
 ):
     _details = [Detail(**detail) for detail in details]
 
     with cm:
-        ReadSubscribersDetail.model_validate({**subscriber.model_dump(mode="json"), "details": _details[count]})
+        ReadSubscriberDetail.model_validate({**subscriber.model_dump(mode="json"), "details": _details[count]})
 
 
 def test_get_subscribers(client: TestClient, database_values: dict[str, list[dict[str, typing.Any]]]):

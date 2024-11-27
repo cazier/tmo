@@ -1,41 +1,15 @@
 # mypy: disable-error-code="return-value"
 
-import pydantic
 from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy.orm import contains_eager
 from sqlmodel import col, select
 
-from ..db.models.tables import Detail, DetailScalar, Subscriber, SubscriberScalar
+from ..db.models.tables import Detail, Subscriber
 from ..dependencies import SessionDependency
 from ..lib.utilities import cast_as_qa
+from .responses import ReadSubscriber, ReadSubscriberDetails
 
 router = APIRouter(prefix="/subscriber")
-
-
-class ReadSubscriber(SubscriberScalar):
-    id: int
-
-
-class _Details(DetailScalar):
-    id: int
-
-
-class ReadSubscribersDetail(SubscriberScalar):
-    id: int
-    detail: DetailScalar = pydantic.Field(alias="details")
-
-    @pydantic.field_validator("detail", mode="before")
-    @classmethod
-    def get_entry(cls, data: list[DetailScalar]) -> DetailScalar:
-        if len(data) != 1:
-            raise ValueError("Data must only contain one detail entry")
-        return data[0]
-
-
-class ReadSubscribersDetails(SubscriberScalar):
-    id: int
-    number_format: str
-    details: list[_Details]
 
 
 @router.get("")
@@ -46,7 +20,7 @@ async def get_subscribers(
 
 
 @router.get("/{id}")
-async def get_subscriber(*, id: int, session: SessionDependency) -> ReadSubscribersDetails:
+async def get_subscriber(*, id: int, session: SessionDependency) -> ReadSubscriberDetails:
     subscriber = (
         session.exec(
             select(Subscriber)
