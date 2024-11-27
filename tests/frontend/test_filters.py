@@ -49,6 +49,7 @@ def bill(
                 id=i,
                 name=str(i),
                 number=str(i),
+                format=str(i),
                 details=NS(
                     **{key: decimal.Decimal((num := int(f"{1 + i}" * 2))) for key in keys},
                     minutes=num,
@@ -65,6 +66,7 @@ def bill(
                 id=i,
                 name=str(i),
                 number=str(i),
+                format=str(i),
                 details=NS(
                     **{key: decimal.Decimal((num := int(f"{1 + i}" * 3))) for key in keys},
                     minutes=num,
@@ -162,7 +164,7 @@ class TestBillsRender:
     @pytest.mark.parametrize("key", ("name", "number"))
     @pytest.mark.parametrize("success", (True, False), ids=("success", "failure"))
     def test_lookup(self, key: str, success: bool, faker: faker.Faker):
-        subscribers = [NS(name=faker.name(), number=phone_number()) for _ in range(20)]
+        subscribers = [NS(name=faker.name(), format="us", number=phone_number()) for _ in range(20)]
 
         b = filters.BillsRender.model_construct(current=NS(subscribers=subscribers))
 
@@ -176,7 +178,7 @@ class TestBillsRender:
                 b._lookup_subscriber(**{key: "InvalidNameOrNumber"})
 
     def test_lookup_invalid_usage(self, faker: faker.Faker):
-        subscribers = [NS(name=faker.name(), number=phone_number()) for _ in range(20)]
+        subscribers = [NS(name=faker.name(), format="us", number=phone_number()) for _ in range(20)]
 
         b = filters.BillsRender.model_construct(current=NS(subscribers=subscribers))
 
@@ -280,6 +282,7 @@ class TestBillsRender:
                 NS(
                     number=phone_number(),
                     name=faker.name(),
+                    format="us",
                     id=1,
                     details=NS(
                         phone=decimal.Decimal(10),
@@ -295,6 +298,7 @@ class TestBillsRender:
                 NS(
                     number=phone_number(),
                     name=faker.name(),
+                    format="us",
                     id=1,
                     details=NS(
                         phone=decimal.Decimal(20),
@@ -310,6 +314,7 @@ class TestBillsRender:
                 NS(
                     number=phone_number(),
                     name=faker.name(),
+                    format="us",
                     id=1,
                     details=NS(
                         phone=decimal.Decimal(30),
@@ -360,6 +365,7 @@ class TestBillsRender:
                 NS(
                     number=phone_number(),
                     name=faker.name(),
+                    format="us",
                     id=1,
                     details=NS(
                         phone=decimal.Decimal(10),
@@ -375,6 +381,7 @@ class TestBillsRender:
                 NS(
                     number=phone_number(),
                     name=faker.name(),
+                    format="us",
                     id=1,
                     details=NS(
                         phone=decimal.Decimal(20),
@@ -390,6 +397,7 @@ class TestBillsRender:
                 NS(
                     number=phone_number(),
                     name=faker.name(),
+                    format="us",
                     id=1,
                     details=NS(
                         phone=decimal.Decimal(30),

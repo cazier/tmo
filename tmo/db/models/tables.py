@@ -29,8 +29,9 @@ class BillSubscriberLink(SQLModel, table=True):
 
 ## Base Models (containing actual scalar values)
 class SubscriberScalar(SQLModel):
-    number: str = Field(unique=True, max_length=20)
     name: str
+    number: str = Field(unique=True, max_length=20)
+    format: str = Field(default="us", max_length=2)
 
 
 class BillScalar(SQLModel):
@@ -59,8 +60,6 @@ class ChargeScalar(SQLModel):
 
 ## Relationship Definitions
 class Subscriber(SubscriberScalar, BaseModel, table=True):
-    number_format: str = Field(default="us", max_length=2)
-
     details: list["Detail"] = Relationship(back_populates="subscriber")
     bills: list["Bill"] = Relationship(back_populates="subscribers", link_model=BillSubscriberLink)
 
