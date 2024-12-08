@@ -1,20 +1,24 @@
+import datetime
 import http
 import pathlib
+import typing
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
 from tmo import config
 
-# from tmo.db.api import router as api
-from tmo.frontend.filters import currency_class
+from ..dependencies import SessionDependency
+from ..routers.bill import get_bill_id, get_previous_ids
+from .filters import BillsRender, currency_class
 
 templates = Jinja2Templates(directory=pathlib.Path(__file__).parent.joinpath("templates"))
 templates.env.globals.update(domain="T-Mobile Bills", cdn=not config.api.debug)
 templates.env.filters.update(currency_class=currency_class)
 
 frontend = APIRouter(include_in_schema=False)
+app: typing.Optional[FastAPI] = None
 
 
 def _error_printer(code: int, request: Request) -> HTMLResponse:
@@ -23,21 +27,18 @@ def _error_printer(code: int, request: Request) -> HTMLResponse:
 
 @frontend.get("/bill")
 @frontend.get("/bill/{year}/{month}")
-async def bill(*, year: Optional[int] = None, month: Optional[int] = None, request: Request) -> HTMLResponse:
+async def get_bill_pair(
+    *, year: int | None = None, month: int | None = None, request: Request, session: SessionDependency
+) -> HTMLResponse:
     if year and month:
         date = datetime.date(year, month, 1)
     else:
         date = datetime.date.today()
 
-    base_url = f"{request.base_url}{api.prefix[1:]}"
-
-    async with AsyncClient() as client:
-        resp = await client.get(f"{base_url}/render/{date.year}/{date.month}")
-
-    if resp.status_code != 200:
-        return _error_printer(resp.status_code, request)
-
-    current, previous = resp.json()
+    current, previous = [
+        await get_bill_id(id=id, session=session)
+        for id in await get_previous_ids(before=date, count=2, session=session)
+    ]
 
     render = BillsRender.model_validate({"month": date, "current": current, "previous": previous})
 

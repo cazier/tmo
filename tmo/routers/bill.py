@@ -22,6 +22,16 @@ async def get_bills(
     return bills
 
 
+@router.get("/previous-ids")
+async def get_previous_ids(
+    *,
+    before: datetime.date = Query(default_factory=datetime.date.today),
+    count: int = Query(default=2, let=5),
+    session: SessionDependency,
+) -> list[int]:
+    return session.exec(select(Bill.id).where(Bill.date <= before).limit(count).order_by(col(Bill.date).desc())).all()
+
+
 @router.get("/{id}")
 async def get_bill_id(*, id: int, session: SessionDependency) -> ReadBillSubscriberTotalsCharges:
     bill = (
