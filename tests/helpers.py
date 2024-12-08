@@ -20,9 +20,5 @@ def phone_number() -> str:
     return f"{random.randint(0, 999):03d}-{random.randint(0, 999):03d}-{random.randint(0, 9999):04d}"
 
 
-def subscriber() -> CompareDict:
-    return CompareDict({"number": phone_number(), "name": faker.name(), "count": 0, "number_format": "us"})
-
-
 def bill() -> CompareDict:
     return CompareDict({"date": faker.date_between(), "total": decimal.Decimal(faker.random_number(digits=5)) / 100})

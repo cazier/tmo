@@ -9,17 +9,17 @@ INSERT INTO bill ("id", "date", "total") VALUES( 8, "2022-01-01", 774.63);
 INSERT INTO bill ("id", "date", "total") VALUES( 9, "2022-02-01", 752.21);
 INSERT INTO bill ("id", "date", "total") VALUES(10, "2022-03-01", 564.21);
 
-INSERT INTO subscriber ("id", "number", "name", "number_format") VALUES( 1, "443-127-4607", "Rachel Steele",      "us");
-INSERT INTO subscriber ("id", "number", "name", "number_format") VALUES( 2, "820-617-2423", "Theresa Kaufman",    "us");
-INSERT INTO subscriber ("id", "number", "name", "number_format") VALUES( 3, "730-164-0707", "Michael Fernandez",  "us");
-INSERT INTO subscriber ("id", "number", "name", "number_format") VALUES( 4, "055-902-7240", "Matthew Whitehead",  "us");
-INSERT INTO subscriber ("id", "number", "name", "number_format") VALUES( 5, "035-246-2525", "Frank Vega",         "us");
-INSERT INTO subscriber ("id", "number", "name", "number_format") VALUES( 6, "136-685-1053", "Robert Burns",       "us");
-INSERT INTO subscriber ("id", "number", "name", "number_format") VALUES( 7, "630-408-5797", "Alexandra Anderson", "us");
-INSERT INTO subscriber ("id", "number", "name", "number_format") VALUES( 8, "075-464-4167", "Roy Hughes",         "us");
-INSERT INTO subscriber ("id", "number", "name", "number_format") VALUES( 9, "140-081-9479", "Thomas Cunningham",  "us");
-INSERT INTO subscriber ("id", "number", "name", "number_format") VALUES(10, "771-939-7832", "Jerry Bridges",      "us");
-INSERT INTO subscriber ("id", "number", "name", "number_format") VALUES(11, "570-078-2753", "Thomas Harrison",    "us");
+INSERT INTO subscriber ("id", "number", "name", "format") VALUES( 1, "443-127-4607", "Rachel Steele",      "us");
+INSERT INTO subscriber ("id", "number", "name", "format") VALUES( 2, "820-617-2423", "Theresa Kaufman",    "us");
+INSERT INTO subscriber ("id", "number", "name", "format") VALUES( 3, "730-164-0707", "Michael Fernandez",  "us");
+INSERT INTO subscriber ("id", "number", "name", "format") VALUES( 4, "055-902-7240", "Matthew Whitehead",  "us");
+INSERT INTO subscriber ("id", "number", "name", "format") VALUES( 5, "035-246-2525", "Frank Vega",         "us");
+INSERT INTO subscriber ("id", "number", "name", "format") VALUES( 6, "136-685-1053", "Robert Burns",       "us");
+INSERT INTO subscriber ("id", "number", "name", "format") VALUES( 7, "630-408-5797", "Alexandra Anderson", "us");
+INSERT INTO subscriber ("id", "number", "name", "format") VALUES( 8, "075-464-4167", "Roy Hughes",         "us");
+INSERT INTO subscriber ("id", "number", "name", "format") VALUES( 9, "140-081-9479", "Thomas Cunningham",  "us");
+INSERT INTO subscriber ("id", "number", "name", "format") VALUES(10, "771-939-7832", "Jerry Bridges",      "us");
+INSERT INTO subscriber ("id", "number", "name", "format") VALUES(11, "570-078-2753", "Thomas Harrison",    "us");
 
 INSERT INTO billsubscriberlink ("bill_id", "subscriber_id") VALUES( 1,  1);
 INSERT INTO billsubscriberlink ("bill_id", "subscriber_id") VALUES( 1,  2);

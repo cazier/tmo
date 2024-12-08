@@ -11,7 +11,7 @@ import pytest
 from sqlmodel import Session, SQLModel, text
 
 from tmo import config
-from tmo.db.models import Subscriber
+from tmo.db.models import Bill, Subscriber
 
 USERS: int = 10
 YEARS: int = 5
@@ -83,7 +83,14 @@ def client(session: Session, tmp_path_factory: pytest.TempPathFactory):
 def subscriber(database_values: dict[str, list[dict[str, typing.Any]]]):
     _subscriber = random.choice(database_values["subscriber"])
 
-    return Subscriber.model_validate(_subscriber)
+    return Subscriber.model_validate_strings({key: str(value) for key, value in _subscriber.items()})
+
+
+@pytest.fixture
+def bill(database_values: dict[str, list[dict[str, typing.Any]]]):
+    _bill = random.choice(database_values["bill"])
+
+    return Bill.model_validate_strings({key: str(value) for key, value in _bill.items()})
 
 
 # def fields(model: pydantic.BaseModel) -> dict[str, pydantic.fields.FieldInfo]:
