@@ -59,6 +59,11 @@ class ReadBillSubscribersCharges(ReadBill):
     subscribers: list[ReadSubscriberDetails]
 
 
+class ReadBillSubscribersChargesDetail(ReadBill):
+    charges: list[ReadCharge]
+    subscribers: list[ReadSubscriberDetail]
+
+
 class ReadBillSubscriberTotalsCharges(ReadBill):
     charges: list[ReadCharge]
     subscribers: list[ReadSubscriberTotals]

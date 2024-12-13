@@ -4,12 +4,12 @@ import datetime
 
 from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy.orm import joinedload
-from sqlmodel import col, select
+from sqlmodel import Session, col, select
 
 from ..db.models import Bill, Detail, Subscriber
 from ..dependencies import SessionDependency
 from ..lib.utilities import cast_as_qa
-from .responses import ReadBill, ReadBillSubscribersCharges, ReadBillSubscriberTotalsCharges
+from .responses import ReadBill, ReadBillSubscribersChargesDetail, ReadBillSubscriberTotalsCharges
 
 router = APIRouter(prefix="/bill")
 
@@ -32,9 +32,8 @@ async def get_previous_ids(
     return session.exec(select(Bill.id).where(Bill.date <= before).limit(count).order_by(col(Bill.date).desc())).all()
 
 
-@router.get("/{id}")
-async def get_bill_id(*, id: int, session: SessionDependency) -> ReadBillSubscriberTotalsCharges:
-    bill = (
+async def _get_bill(*, id: int, session: Session) -> Bill | None:
+    return (
         session.exec(
             select(Bill)
             .where(Bill.id == id)
@@ -49,13 +48,27 @@ async def get_bill_id(*, id: int, session: SessionDependency) -> ReadBillSubscri
         .first()
     )
 
+
+@router.get("/{id}")
+async def get_bill_id(*, id: int, session: SessionDependency) -> ReadBillSubscriberTotalsCharges:
+    bill = await _get_bill(id=id, session=session)
+
+    if not bill:
+        raise HTTPException(status_code=404, detail="Bill could not be found")
+    return bill
+
+
+@router.get("/{id}/detailed", include_in_schema=False)
+async def get_bill_detailed(*, id: int, session: SessionDependency) -> ReadBillSubscribersChargesDetail:
+    bill = await _get_bill(id=id, session=session)
+
     if not bill:
         raise HTTPException(status_code=404, detail="Bill could not be found")
     return bill
 
 
 @router.get("/{year}/{month}")
-async def get_bill_date(*, year: int, month: int, session: SessionDependency) -> ReadBillSubscribersCharges:
+async def get_bill_date(*, year: int, month: int, session: SessionDependency) -> ReadBillSubscriberTotalsCharges:
     subquery = (
         select(Bill.id)
         .where(Bill.date >= datetime.date(year, month, 1))
