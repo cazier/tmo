@@ -6,12 +6,12 @@
 <section class="section py-1">
     <div class="container">
         <h1>
-            <a href="/bill/{{ bill.months[0].strftime('%Y/%m') }}">
+            <a class="hide-from-printer" href="/bill/{{ bill.months[0].strftime('%Y/%m') }}">
                 <span class="icon is-small"><i class="fas fa-lg fa-less-than" aria-hidden="true"></i></span>
             </a>
             <span class="title px-1"><span id="date"></span><span>&ensp;&mdash;&ensp;</span><span class="has-text-info-legacy">${{ "{:.02f}".format(bill.total) }}</span></span>
             {%- if bill.months[1] -%}
-            <a href="/bill/{{ bill.months[1].strftime('%Y/%m') }}">
+            <a class="hide-from-printer" href="/bill/{{ bill.months[1].strftime('%Y/%m') }}">
                 <span class="icon is-small"><i class="fas fa-lg fa-greater-than" aria-hidden="true"></i></span>
             </a>
             {% endif %}
@@ -217,7 +217,7 @@
             margin: 0.25in;
         }
 
-        div#panel, nav.navbar {
+        div#panel, nav.navbar, .hide-from-printer {
             display: none;
         }
 
