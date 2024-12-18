@@ -91,7 +91,3 @@ def bill(database_values: dict[str, list[dict[str, typing.Any]]]):
     _bill = random.choice(database_values["bill"])
 
     return Bill.model_validate_strings({key: str(value) for key, value in _bill.items()})
-
-
-# def fields(model: pydantic.BaseModel) -> dict[str, pydantic.fields.FieldInfo]:
-#     return model.model_fields
