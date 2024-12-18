@@ -1,5 +1,7 @@
 # mypy: disable-error-code="has-type,no-untyped-def"
 import typing
+import datetime
+import random
 
 import pytest
 from fastapi.testclient import TestClient
@@ -33,6 +35,24 @@ def details(bill: Bill, database_values: dict[str, list[dict[str, typing.Any]]])
 
     return resp
 
+@pytest.fixture
+def previous_ids(database_values: dict[str, list[dict[str, typing.Any]]], request: pytest.FixtureRequest) -> tuple[datetime.date, list[int]]:
+    match request.param:
+        case "latest":
+            return datetime.date.today(), [bill['id'] for bill in database_values['bill'][:-3:-1]]
+
+        case "random":
+            date = random.choice(database_values['bill'][1:])
+            return datetime.date.fromisoformat(date['date']), [date['id'], date['id'] - 1]
+
+@pytest.mark.parametrize(("previous_ids"), ["latest", "random"], indirect=True)
+def test_get_previous_ids(previous_ids: tuple[datetime.date, list[int]], client: TestClient, ):
+    date, ids = previous_ids
+    
+    response = client.get("/api/bill/previous-ids", params={'before': date.isoformat()} if date != datetime.date.today() else {})
+    assert response.status_code == 200
+    assert len(response.json()) == 2
+    assert response.json() == ids
 
 def test_get_bills(client: TestClient, database_values: dict[str, list[dict[str, typing.Any]]]):
     response = client.get("/api/bill")

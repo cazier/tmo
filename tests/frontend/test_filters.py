@@ -188,14 +188,15 @@ class TestBillsRender:
     def test_owed(self, faker: faker.Faker):
         names = [
             NS(
+                # TODO: faker.first_name() isn't general enough and, occassionally, the same name appears multiple times
                 name=faker.first_name(),
                 number=phone_number(),
                 details=NS(total=decimal.Decimal(random.randint(0, 100))),
             )
-            for _ in range(20)
+            for _ in range(10)
         ]
 
-        steps = [0, *sorted(random.sample(range(20), 5)), len(names)]
+        steps = [0, *sorted(random.sample(range(10), 5)), len(names)]
         dependents: dict[str, list[str]] = {}
         total = {}
 
