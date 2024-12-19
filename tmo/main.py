@@ -36,8 +36,8 @@ def import_from_json(
     path: Annotated[pathlib.Path, typer.Option(help="path to json file")],
     config_file: Annotated[Optional[pathlib.Path], typer.Option("--config", help="Path to a config file")] = None,
 ) -> None:
-    from tmo import Config
-    from tmo.db.tools.json_import import run
+    from . import Config
+    from .db.tools.json_import import run
 
     if config_file:
         Config.from_file(config_file)
@@ -55,9 +55,9 @@ def playground(
     import IPython
     from sqlmodel import Session, func, select
 
-    from tmo import config
-    from tmo.db.highlight import db_print
-    from tmo.db.models import Bill, Charge, Detail, Subscriber
+    from . import config
+    from .db.highlight import db_print
+    from .db.models import Bill, Charge, Detail, Subscriber
 
     updates: dict[str, str | bool]
 
@@ -75,7 +75,7 @@ def playground(
         updates["echo"] = show_sql
 
     with config.patch(database=updates):
-        from tmo.db.engines import start_engine
+        from .db.engines import start_engine
 
         engine = start_engine()
 
@@ -85,7 +85,7 @@ def playground(
 
 @app.command()
 def info() -> None:
-    from tmo import __version__
+    from . import __version__
 
     head = "T-Mobile Bills"
     version = f" v{__version__.MAJOR}.{__version__.MINOR}.{__version__.PATCH}"

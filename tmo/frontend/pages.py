@@ -8,7 +8,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from httpx import ASGITransport, AsyncClient, Response
 
-from tmo import config
+from .. import config
 
 from .filters import BillsRender, currency_class
 

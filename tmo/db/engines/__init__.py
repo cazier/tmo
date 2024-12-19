@@ -5,7 +5,7 @@ import typing
 from sqlalchemy import Engine
 from sqlmodel import SQLModel
 
-from tmo import config
+from ... import config
 from tmo.config import Memory, Postgres, Sqlite
 from tmo.db.highlight import attach_handler
 from tmo.db.models import Bill, BillSubscriberLink, Charge, Detail, Subscriber
