@@ -1,27 +1,13 @@
 import datetime
-import http
-import pathlib
-import typing
 
-from fastapi import APIRouter, FastAPI, Request
+from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
 from httpx import ASGITransport, AsyncClient, Response
 
-from .. import config
-
-from .filters import BillsRender, currency_class
-
-templates = Jinja2Templates(directory=pathlib.Path(__file__).parent.joinpath("templates"))
-templates.env.globals.update(domain="T-Mobile Bills", cdn=not config.api.debug)
-templates.env.filters.update(currency_class=currency_class)
+from . import templates
+from .filters import BillsRender
 
 frontend = APIRouter(include_in_schema=False)
-app: typing.Optional[FastAPI] = None
-
-
-def _error_printer(code: int, request: Request) -> HTMLResponse:
-    return templates.TemplateResponse(request, "error.html.j2", {"status": http.HTTPStatus(code)}, code)
 
 
 @frontend.get("/bill")
