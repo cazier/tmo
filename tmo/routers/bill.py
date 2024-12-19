@@ -2,13 +2,14 @@
 
 import datetime
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Query
 from sqlalchemy.orm import joinedload
 from sqlmodel import Session, col, select
 
 from ..db.models import Bill, Detail, Subscriber
 from ..dependencies import SessionDependency
 from ..lib.utilities import cast_as_qa
+from ..web2.exceptions import APIException
 from .responses import ReadBill, ReadBillSubscribersChargesDetail, ReadBillSubscriberTotalsCharges
 
 router = APIRouter(prefix="/bill")
@@ -54,7 +55,7 @@ async def get_bill_id(*, id: int, session: SessionDependency) -> ReadBillSubscri
     bill = await _get_bill(id=id, session=session)
 
     if not bill:
-        raise HTTPException(status_code=404, detail="Bill could not be found")
+        raise APIException(status_code=404, detail="Bill could not be found")
     return bill
 
 
@@ -63,7 +64,7 @@ async def get_bill_detailed(*, id: int, session: SessionDependency) -> ReadBillS
     bill = await _get_bill(id=id, session=session)
 
     if not bill:
-        raise HTTPException(status_code=404, detail="Bill could not be found")
+        raise APIException(status_code=404, detail="Bill could not be found")
     return bill
 
 
@@ -95,5 +96,5 @@ async def get_bill_date(*, year: int, month: int, session: SessionDependency) ->
     )
 
     if not bill:
-        raise HTTPException(status_code=404, detail="Bill could not be found")
+        raise APIException(status_code=404, detail="Bill could not be found")
     return bill
