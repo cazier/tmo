@@ -15,6 +15,11 @@ repos:
     rev: 5.12.0
     hooks:
       - id: isort
+  - repo: https://github.com/pappasam/toml-sort
+    rev: v0.23.1
+    hooks:
+      - id: toml-sort-fix
+        exclude: ^pyproject.toml|uv.lock$
   - repo: local
     hooks:
       - id: mypy

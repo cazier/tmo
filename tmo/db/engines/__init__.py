@@ -1,34 +1,44 @@
 import logging
+import sys
+import typing
 
+from sqlalchemy import Engine
 from sqlmodel import SQLModel
 
-from tmo.config import database
-from tmo.db.highlight import LOGGER_NAME, SqlHandler
+from tmo.config import Memory, Postgres, Sqlite
+from tmo.db.highlight import attach_handler
 from tmo.db.models import Bill, BillSubscriberLink, Charge, Detail, Subscriber
 
+from ... import config
 from ._postgres import init as _init_postgres
 from ._sqlite import init as _init_sqlite
 
 logging.basicConfig()
 
-match database.pop("dialect"):
-    case "sqlite":
-        engine = _init_sqlite(**database)  # type: ignore[arg-type]
 
-    case "postgres":
-        engine = _init_postgres(**database)  # type: ignore[arg-type]
+def start_engine(connect_args: dict[str, typing.Any] | None = None) -> Engine:
+    connect_args = connect_args or {}
 
-    case _:
-        import sys
+    match config.database:
+        case Sqlite() | Memory():
+            engine = _init_sqlite(config.database, connect_args=connect_args)
 
-        sys.exit(1)
+        case Postgres():
+            engine = _init_postgres(config.database, connect_args=connect_args)
 
-if database.get("echo"):
-    logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
-    logging.getLogger(LOGGER_NAME).addHandler(SqlHandler())
+        case _:
+            logging.getLogger("uvicorn.error").error("Could not match the database type: %s", type(config.database))
+            sys.exit(1)
 
-# This just exists to prevent linters from removing unused imports
-# pylint: disable-next=pointless-statement
-(Bill, BillSubscriberLink, Charge, Detail, Subscriber)
+    logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
 
-SQLModel.metadata.create_all(engine)
+    if config.database.echo:
+        logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
+        attach_handler()
+
+    SQLModel.metadata.create_all(engine)
+
+    return engine
+
+
+__all__ = ["Bill", "BillSubscriberLink", "Charge", "Detail", "Subscriber"]

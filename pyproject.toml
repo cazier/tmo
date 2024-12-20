@@ -1,6 +1,6 @@
 [project]
 name = "tmo"
-version = "0.1.0"
+version = "1.0.0"
 description = ""
 readme = "README.md"
 requires-python = ">=3.12"
@@ -10,6 +10,8 @@ dependencies = [
     "httpx>=0.27.2",
     "jinja2>=3.1.4",
     "psycopg[binary]>=3.2.3",
+    "pydantic>=2.9.2",
+    "pydantic-settings>=2.5.2",
     "sqlmodel>=0.0.22",
     "typer>=0.12.5",
     "uvicorn>=0.31.0",
@@ -41,6 +43,7 @@ testing = [
 
 [tool.uv]
 dev-dependencies = [
+    "coverage==7.6.9",
     "faker>=30.1.0",
     "ipython>=8.28.0",
     "isort>=5.13.2",
@@ -51,12 +54,37 @@ dev-dependencies = [
     "rich>=13.9.2",
     "ruff>=0.6.9",
     "shandy-sqlfmt>=0.23.2",
+    "time-machine>=2.16.0",
+    "types-pygments>=2.18.0.20240506",
     "watchfiles>=0.24.0",
 ]
 
+# FORMATTING
 [tool.ruff]
 line-length = 120
 
 [tool.isort]
 line_length = 120
 profile = "black"
+
+# LINTING
+[tool.mypy]
+strict = true
+explicit_package_bases = true
+exclude = [
+    "^tmo/db/api\\.py$",
+    "^tmo/frontend/filters\\.py",
+    "^tmo/frontend/pages\\.py",
+]
+
+# TESTING
+[tool.pytest.ini_options]
+addopts = "-s"
+console_output_style = "progress-even-when-capture-no"
+
+[tool.coverage.run]
+omit = [
+  "utilities/*",
+  "tests/*",
+  "tmo/frontend/templates/*"
+]

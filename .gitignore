@@ -7,6 +7,7 @@ config.toml
 tmo/frontend/static/*
 !tmo/frontend/static/icon.svg
 !tmo/frontend/static/scripts.js
+!tmo/frontend/static/custom.css
 !tmo/frontend/static/scripts.min.js
 # Eventually remove these
 node_modules/
@@ -14,3 +15,4 @@ package-lock.json
 package.json
 *.session.sql
 .dmypy.json
+.coverage
