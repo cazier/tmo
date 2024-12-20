@@ -1,14 +1,14 @@
 # mypy: disable-error-code="no-untyped-def"
 
-import tmo.dependencies
+import tmo.web.dependencies
 from tmo import config
 
 
 def test_initialization():
-    assert tmo.dependencies.engine is None
+    assert tmo.web.dependencies.engine is None
     database = {"dialect": "memory"}
 
     with config.patch(database=database):
-        engine = next(tmo.dependencies.get_session())
+        engine = next(tmo.web.dependencies.get_session())
 
     assert engine is not None

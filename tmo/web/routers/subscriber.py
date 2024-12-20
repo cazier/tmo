@@ -4,9 +4,9 @@ from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy.orm import contains_eager
 from sqlmodel import col, select
 
-from ..db.models.tables import Detail, Subscriber
+from ...db.models.tables import Detail, Subscriber
+from ...lib.utilities import cast_as_qa
 from ..dependencies import SessionDependency
-from ..lib.utilities import cast_as_qa
 from .responses import ReadSubscriber, ReadSubscriberDetails
 
 router = APIRouter(prefix="/subscriber")

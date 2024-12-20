@@ -3,7 +3,7 @@ import typing
 
 import pydantic
 
-from ..db.models.tables import BillScalar, ChargeScalar, DetailScalar, JsonDecimal, SubscriberScalar
+from ...db.models.tables import BillScalar, ChargeScalar, DetailScalar, JsonDecimal, SubscriberScalar
 
 
 class _Details(DetailScalar):

@@ -5,7 +5,7 @@ import typing
 
 from pydantic import BaseModel, Field, dataclasses, field_validator, model_validator
 
-from ..config import config
+from ...config import config
 from ..routers.responses import BillRender, SubscriberReadWithDetails
 
 Unset = object()

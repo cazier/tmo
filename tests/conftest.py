@@ -77,8 +77,8 @@ def client(session: Session, tmp_path_factory: pytest.TempPathFactory):
         mp.setenv("TMO_UVICORN_CONFIG_PATH", str(path))
         path.write_text(json.dumps(config.model_dump(mode="json")), encoding="utf8")
 
-        from tmo.dependencies import get_session
-        from tmo.web import app
+        from tmo.web.app import app
+        from tmo.web.dependencies import get_session
 
         with fastapi.testclient.TestClient(app) as client:
             app.dependency_overrides[get_session] = _get_session_test

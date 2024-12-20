@@ -4,11 +4,11 @@ bills/
 **/__pycache__
 config.toml
 
-tmo/frontend/static/*
-!tmo/frontend/static/icon.svg
-!tmo/frontend/static/scripts.js
-!tmo/frontend/static/custom.css
-!tmo/frontend/static/scripts.min.js
+tmo/web/frontend/static/*
+!tmo/web/frontend/static/icon.svg
+!tmo/web/frontend/static/scripts.js
+!tmo/web/frontend/static/custom.css
+!tmo/web/frontend/static/scripts.min.js
 # Eventually remove these
 node_modules/
 package-lock.json
