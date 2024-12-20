@@ -13,7 +13,9 @@ import pytest
 
 from tests.helpers import phone_number
 from tmo.config import config
-from tmo.frontend import filters
+from tmo.web.frontend import filters
+
+pytestmark = [pytest.mark.usefixtures("client")]
 
 
 class NS(types.SimpleNamespace):

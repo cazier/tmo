@@ -3,7 +3,7 @@ import pathlib
 from fastapi import staticfiles
 from fastapi.templating import Jinja2Templates
 
-from .. import config
+from ... import config
 from .filters import currency_class
 
 static = staticfiles.StaticFiles(directory=pathlib.Path(__file__).parent.joinpath("static"))

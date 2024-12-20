@@ -5,11 +5,11 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from starlette.exceptions import HTTPException
 
-from . import Config, config
+from .. import Config, config
+from .exceptions import APIException
 from .frontend import static, templates
 from .frontend.pages import frontend
 from .routers.api import api
-from .web2.exceptions import APIException
 
 Config.from_file(os.environ["TMO_UVICORN_CONFIG_PATH"])
 

@@ -21,7 +21,7 @@ def serve(
         root.write_text(f"TMO_UVICORN_CONFIG_PATH={config_path}", encoding="utf8")
 
         uvicorn.run(
-            "tmo.web:app",
+            "tmo.web.app:app",
             host=host,
             port=port,
             reload=reload,

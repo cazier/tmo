@@ -6,10 +6,10 @@ from fastapi import APIRouter, Query
 from sqlalchemy.orm import joinedload
 from sqlmodel import Session, col, select
 
-from ..db.models import Bill, Detail, Subscriber
+from ...db.models import Bill, Detail, Subscriber
+from ...lib.utilities import cast_as_qa
 from ..dependencies import SessionDependency
-from ..lib.utilities import cast_as_qa
-from ..web2.exceptions import APIException
+from ..exceptions import APIException
 from .responses import ReadBill, ReadBillSubscribersChargesDetail, ReadBillSubscriberTotalsCharges
 
 router = APIRouter(prefix="/bill")
