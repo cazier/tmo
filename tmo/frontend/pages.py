@@ -1,5 +1,7 @@
 import datetime
+import typing
 
+import pydantic
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 from httpx import ASGITransport, AsyncClient, Response
@@ -12,7 +14,12 @@ frontend = APIRouter(include_in_schema=False)
 
 @frontend.get("/bill")
 @frontend.get("/bill/{year}/{month}")
-async def get_bill_pair(*, year: int | None = None, month: int | None = None, request: Request) -> HTMLResponse:
+async def get_bill_pair(
+    *,
+    year: typing.Optional[typing.Annotated[int, pydantic.Field(ge=2000, le=3000)]] = None,
+    month: typing.Optional[typing.Annotated[int, pydantic.Field(ge=1, le=12)]] = None,
+    request: Request,
+) -> HTMLResponse:
     async def _get_bill(id: int, client: AsyncClient) -> Response:
         url = request.url_for("get_bill_detailed", id=id)
 

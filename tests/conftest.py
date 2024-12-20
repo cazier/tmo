@@ -6,6 +6,7 @@ import random
 import re
 import typing
 
+import faker
 import fastapi.testclient
 import pytest
 from sqlmodel import Session, SQLModel, text
@@ -20,8 +21,13 @@ FIELDS: tuple[str, ...] = ("phone", "line", "insurance", "usage", "minutes", "me
 
 
 @pytest.fixture(scope="module")
-def session(request: pytest.FixtureRequest):
-    with config.patch(database={"dialect": "memory", "echo": request.config.get_verbosity() > 0}):
+def session(database_values: dict[str, list[dict[str, typing.Any]]], request: pytest.FixtureRequest):
+    with config.patch(
+        database={"dialect": "memory", "echo": request.config.get_verbosity() > 0},
+        frontend={
+            "colors": {subscriber["number"]: faker.Faker().hex_color() for subscriber in database_values["subscriber"]}
+        },
+    ):
         from tmo.db.engines import start_engine
 
         engine = start_engine(connect_args={"check_same_thread": False})
@@ -65,11 +71,11 @@ def client(session: Session, tmp_path_factory: pytest.TempPathFactory):
     def _get_session_test():
         return session
 
-    path = tmp_path_factory.getbasetemp().joinpath("config.toml")
+    path = tmp_path_factory.getbasetemp().joinpath("config.json")
 
     with pytest.MonkeyPatch.context() as mp:
         mp.setenv("TMO_UVICORN_CONFIG_PATH", str(path))
-        path.write_text("", encoding="utf8")
+        path.write_text(json.dumps(config.model_dump(mode="json")), encoding="utf8")
 
         from tmo.dependencies import get_session
         from tmo.web import app
@@ -88,6 +94,6 @@ def subscriber(database_values: dict[str, list[dict[str, typing.Any]]]):
 
 @pytest.fixture
 def bill(database_values: dict[str, list[dict[str, typing.Any]]]):
-    _bill = random.choice(database_values["bill"])
+    _bill = random.choice(database_values["bill"][1:])
 
     return Bill.model_validate_strings({key: str(value) for key, value in _bill.items()})

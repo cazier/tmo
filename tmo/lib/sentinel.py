@@ -21,7 +21,7 @@ class Sentinel(pydantic.BaseModel):
         _UPDATE_SENTINEL = False
 
     def __getattribute__(self, name: str) -> typing.Any:
-        if name in "model_fields" or name not in type(self).model_fields:
+        if name in "model_fields" or name not in type(self).model_fields and name != "model_dump":
             return super().__getattribute__(name)
 
         return object.__getattribute__(_sentinel, name)

@@ -43,6 +43,7 @@ testing = [
 
 [tool.uv]
 dev-dependencies = [
+    "coverage==7.6.9",
     "faker>=30.1.0",
     "ipython>=8.28.0",
     "isort>=5.13.2",
@@ -53,6 +54,7 @@ dev-dependencies = [
     "rich>=13.9.2",
     "ruff>=0.6.9",
     "shandy-sqlfmt>=0.23.2",
+    "time-machine>=2.16.0",
     "types-pygments>=2.18.0.20240506",
     "watchfiles>=0.24.0",
 ]
@@ -83,5 +85,6 @@ console_output_style = "progress-even-when-capture-no"
 [tool.coverage.run]
 omit = [
   "utilities/*",
-  "tests/*"
+  "tests/*",
+  "tmo/frontend/templates/*"
 ]
