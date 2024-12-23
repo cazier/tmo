@@ -24,9 +24,9 @@ class Color {
 
     static fromHex(string) { return new Color(parseInt(string.slice(1, 3), 16), parseInt(string.slice(3, 5), 16), parseInt(string.slice(5, 7), 16)) }
 
-    static red()     { return Color.fromHex("#FF3F3F"); };
-    static yellow()  { return Color.fromHex("#FCEF64"); };
-    static green()   { return Color.fromHex("#4AE27A"); };
+    static red() { return Color.fromHex("#FF3F3F"); };
+    static yellow() { return Color.fromHex("#FCEF64"); };
+    static green() { return Color.fromHex("#4AE27A"); };
     static magenta() { return Color.fromHex("#D67AB1"); };
 
     static increase() { return Color.red().rgb() };

@@ -14,7 +14,7 @@ router = APIRouter(prefix="/subscriber")
 
 @router.get("")
 async def get_subscribers(
-    *, start: int = 0, count: int = Query(default=100, le=100), session: SessionDependency
+    *, start: int = Query(default=0, ge=0), count: int = Query(default=100, gt=1, le=100), session: SessionDependency
 ) -> list[ReadSubscriber]:
     return session.exec(select(Subscriber).order_by(col(Subscriber.id).asc()).offset(start).limit(count)).all()
 

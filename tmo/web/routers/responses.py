@@ -69,7 +69,6 @@ class ReadBillSubscriberTotalsCharges(ReadBill):
     subscribers: list[ReadSubscriberTotals]
 
 
-# TODO: Replace these last two responses
 class SubscriberReadWithDetails(ReadSubscriber):
     details: DetailScalar
 
@@ -78,16 +77,3 @@ class BillRender(BillScalar):
     id: int
     charges: list[ReadCharge]
     subscribers: list[SubscriberReadWithDetails]
-
-
-# class RenderLoader(BillRender):
-#     @pydantic.model_validator(mode="before")
-#     @classmethod
-#     def _test(cls, data: ReadBillSubscribersCharges) -> dict[str, typing.Any]:
-#         breakpoint()
-#         bill = {**data.model_dump(mode="json"), "charges": [], "subscribers": []}
-
-#         for subscriber in data.subscribers:
-#             [subscriber["details"]] = [detail for detail in subscriber["details"] if detail["bill_id"] == data.id]
-
-#         return bill
