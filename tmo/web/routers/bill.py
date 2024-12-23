@@ -41,7 +41,11 @@ async def get_previous_ids(
     return session.exec(select(Bill.id).where(Bill.date <= before).limit(count).order_by(col(Bill.date).desc())).all()
 
 
-async def _get_bill(*, id: int, session: Session) -> Bill | None:
+async def _get_bill(
+    *,
+    id: int,
+    session: Session,
+) -> Bill | None:
     return (
         session.exec(
             select(Bill)
@@ -59,7 +63,11 @@ async def _get_bill(*, id: int, session: Session) -> Bill | None:
 
 
 @router.get("/{id}")
-async def get_bill_id(*, id: int = Path(ge=0), session: SessionDependency) -> ReadBillSubscriberTotalsCharges:
+async def get_bill_id(
+    *,
+    id: int = Path(ge=0),
+    session: SessionDependency,
+) -> ReadBillSubscriberTotalsCharges:
     bill = await _get_bill(id=id, session=session)
 
     if not bill:
@@ -68,7 +76,11 @@ async def get_bill_id(*, id: int = Path(ge=0), session: SessionDependency) -> Re
 
 
 @router.get("/{id}/detailed", include_in_schema=False)
-async def get_bill_detailed(*, id: int = Path(ge=0), session: SessionDependency) -> ReadBillSubscribersChargesDetail:
+async def get_bill_detailed(
+    *,
+    id: int = Path(ge=0),
+    session: SessionDependency,
+) -> ReadBillSubscribersChargesDetail:
     bill = await _get_bill(id=id, session=session)
 
     if not bill:
