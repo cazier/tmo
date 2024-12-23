@@ -2,8 +2,8 @@
 import datetime
 import typing
 
+import fastapi
 import pydantic
-from fastapi import APIRouter, Path, Query
 from sqlalchemy.orm import joinedload
 from sqlmodel import Session, col, select
 
@@ -13,14 +13,14 @@ from ..dependencies import SessionDependency
 from ..exceptions import APIException
 from .responses import ReadBill, ReadBillSubscribersChargesDetail, ReadBillSubscriberTotalsCharges
 
-router = APIRouter(prefix="/bill")
+router = fastapi.APIRouter(prefix="/bill")
 
 
 @router.get("")
 async def get_bills(
     *,
-    start: typing.Annotated[int, Query(ge=0)] = 0,
-    count: typing.Annotated[int, Query(gt=1, le=100)],
+    start: typing.Annotated[int, fastapi.Query(ge=0)] = 0,
+    count: typing.Annotated[int, fastapi.Query(gt=1, le=100)] = 10,
     session: SessionDependency,
 ) -> list[ReadBill]:
     bills = session.exec(select(Bill).order_by(col(Bill.id).asc()).offset(start).limit(count)).all()
@@ -30,12 +30,12 @@ async def get_bills(
 @router.get("/previous-ids")
 async def get_previous_ids(
     *,
-    before: datetime.date = Query(
+    before: datetime.date = fastapi.Query(
         default_factory=datetime.date.today,
         ge=datetime.date(2000, 1, 1),  # type: ignore[arg-type]
         le=datetime.date(3000, 12, 31),  # type: ignore[arg-type]
     ),
-    count: int = Query(default=2, le=5),
+    count: int = fastapi.Query(default=2, le=5),
     session: SessionDependency,
 ) -> list[int]:
     return session.exec(select(Bill.id).where(Bill.date <= before).limit(count).order_by(col(Bill.date).desc())).all()
@@ -65,7 +65,7 @@ async def _get_bill(
 @router.get("/{id}")
 async def get_bill_id(
     *,
-    id: int = Path(ge=0),
+    id: int = fastapi.Path(ge=0),
     session: SessionDependency,
 ) -> ReadBillSubscriberTotalsCharges:
     bill = await _get_bill(id=id, session=session)
@@ -78,7 +78,7 @@ async def get_bill_id(
 @router.get("/{id}/detailed", include_in_schema=False)
 async def get_bill_detailed(
     *,
-    id: int = Path(ge=0),
+    id: int = fastapi.Path(ge=0),
     session: SessionDependency,
 ) -> ReadBillSubscribersChargesDetail:
     bill = await _get_bill(id=id, session=session)

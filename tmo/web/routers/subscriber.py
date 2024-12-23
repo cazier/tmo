@@ -1,22 +1,24 @@
 # mypy: disable-error-code="return-value"
+import typing
 
-from fastapi import APIRouter, HTTPException, Query
+import fastapi
 from sqlalchemy.orm import contains_eager
 from sqlmodel import col, select
 
 from ...db.models.tables import Detail, Subscriber
 from ...lib.utilities import cast_as_qa
 from ..dependencies import SessionDependency
+from ..exceptions import APIException
 from .responses import ReadSubscriber, ReadSubscriberDetails
 
-router = APIRouter(prefix="/subscriber")
+router = fastapi.APIRouter(prefix="/subscriber")
 
 
 @router.get("")
 async def get_subscribers(
     *,
-    start: int = Query(default=0, ge=0),
-    count: int = Query(default=100, gt=1, le=100),
+    start: typing.Annotated[int, fastapi.Query(ge=0)] = 0,
+    count: typing.Annotated[int, fastapi.Query(gt=1, le=100)] = 10,
     session: SessionDependency,
 ) -> list[ReadSubscriber]:
     return session.exec(select(Subscriber).order_by(col(Subscriber.id).asc()).offset(start).limit(count)).all()
@@ -25,7 +27,7 @@ async def get_subscribers(
 @router.get("/{id}")
 async def get_subscriber(
     *,
-    id: int,
+    id: typing.Annotated[int, fastapi.Path(ge=0)],
     session: SessionDependency,
 ) -> ReadSubscriberDetails:
     subscriber = (
@@ -41,6 +43,6 @@ async def get_subscriber(
     )
 
     if not subscriber:
-        raise HTTPException(status_code=404, detail="Subscriber could not be found")
+        raise APIException(status_code=404, detail="Subscriber could not be found")
 
     return subscriber
