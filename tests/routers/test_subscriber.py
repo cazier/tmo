@@ -40,10 +40,16 @@ def test_model_validate(
         ReadSubscriberDetail.model_validate({**subscriber.model_dump(mode="json"), "details": _details[count]})
 
 
-def test_get_subscribers(client: TestClient, database_values: dict[str, list[dict[str, typing.Any]]]):
-    response = client.get("/api/subscriber")
+@pytest.mark.parametrize("count", (5, -1), ids=("paginated", "default"))
+def test_get_subscribers(count: int, client: TestClient, database_values: dict[str, list[dict[str, typing.Any]]]):
+    if count < 0:
+        response = client.get("/api/subscriber")
+        count = 10
+    else:
+        response = client.get("/api/subscriber", params={"count": count})
+
     assert response.status_code == 200
-    assert len(response.json()) == len(database_values["subscriber"])
+    assert len(response.json()) == count
     assert response.json() == sorted(response.json(), key=lambda k: k["id"])
 
 

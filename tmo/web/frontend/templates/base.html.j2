@@ -4,6 +4,10 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="/static/dark_mode.js"></script>
+    <script>
+        dm.set();
+    </script>
     <link rel="stylesheet" href="/static/custom.css">
     {% if cdn %}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
@@ -72,6 +76,11 @@
             <div class="navbar-end">
                 <div class="navbar-item">
                     <div class="buttons">
+                        <a>
+                            <span id="dark_toggle" style="font-size: 28px;">
+                                <i class="fa-solid fa-sun"></i>
+                            </span>
+                        </a>
                         <a class="button is-primary">
                             <strong>Sign up</strong>
                         </a>
