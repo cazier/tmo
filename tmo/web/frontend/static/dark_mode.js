@@ -1,53 +1,55 @@
-function _getDarkMode() {
-    var resp =  document.documentElement.dataset.theme == "dark";
-    return resp;
-}
+/* global localStorage */
 
-function _setDarkMode(on) {
-    document.documentElement.dataset.theme = on ? "dark" : ""
-    localStorage.setItem('dark_mode', JSON.stringify(on));
-}
+class DarkMode {
+  buttonSelector = '#dark_toggle'
 
-function setDarkMode(on = null) {
-    if (on === null) {
-        var on = localStorage.getItem("dark_mode");
-        if (on === null) {
-            on = window.matchMedia("(prefers-color-scheme: dark)").matches;
-        } else {
-            on = JSON.parse(on);
-        }
-    }
-
-    _setDarkMode(on);
-
-    // if (on) {
-    //     document.documentElement.dataset.theme = "dark";
-    // } else {
-    //     document.documentElement.dataset.theme = "";
-    // }
-
-}
-
-function setDarkModeIcon(span) {
-    console.log("Dark Mode Set");
-    var icon = span.querySelector("i");
-
-    if (_getDarkMode()) {
-        icon.classList.remove("fa-moon");
-        icon.classList.add("fa-sun")
+  constructor () {
+    const state = localStorage.getItem('dark_mode')
+    if (state === null) {
+      this.on = window.matchMedia('(prefers-color-scheme: dark)').matches
     } else {
-        icon.classList.remove("fa-sun");
-        icon.classList.add("fa-moon")
+      this.on = JSON.parse(state)
     }
+  }
 
+  get enabled () {
+    return this.on
+  }
+
+  set enabled (state) {
+    this.on = state
+    document.documentElement.dataset.theme = state ? 'dark' : ''
+    localStorage.setItem('dark_mode', JSON.stringify(state))
+  }
+
+  set () {
+    this.enabled = this.enabled // eslint-disable-line no-self-assign
+  }
+
+  setIcon () {
+    const icon = document.querySelector(this.buttonSelector + ' i')
+
+    if (this.enabled) {
+      icon.classList.remove('fa-moon')
+      icon.classList.add('fa-sun')
+    } else {
+      icon.classList.remove('fa-sun')
+      icon.classList.add('fa-moon')
+    };
+  }
+
+  click () {
+    this.enabled = !this.enabled
+    this.setIcon()
+  }
 }
+
+const dm = new DarkMode()
 
 window.addEventListener('load', () => {
-    var button = document.querySelector("#dark_toggle");
-    setDarkModeIcon(button);
+  dm.setIcon()
 
-    button.addEventListener("click", () => {
-        _setDarkMode(! _getDarkMode());
-        setDarkModeIcon(button);
-    })
-});
+  document.querySelector(dm.buttonSelector).addEventListener('click', () => {
+    dm.click()
+  })
+})

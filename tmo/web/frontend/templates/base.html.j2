@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="/static/dark_mode.js"></script>
     <script>
-        setDarkMode();
+        dm.set();
     </script>
     <link rel="stylesheet" href="/static/custom.css">
     {% if cdn %}
@@ -22,7 +22,6 @@
     <script src="/static/cash.js"></script>
     <script src="/static/chart.js"></script>
     {% endif %}
-    <!-- <script src="/static/dark_mode.js"></script> -->
     <title>{% block title required %}{% endblock title %}</title>
     {% block header %}{% endblock header %}
 </head>
