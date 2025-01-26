@@ -7,6 +7,8 @@ import typer
 import uvicorn
 
 app = typer.Typer()
+update = typer.Typer()
+app.add_typer(update, name="update")
 
 
 @app.command()
@@ -31,20 +33,6 @@ def serve(
             reload_excludes=["./tests/*"] if reload else None,
             env_file=root,
         )
-
-
-@app.command("import")
-def import_from_json(
-    path: Annotated[pathlib.Path, typer.Option(help="path to json file")],
-    config_file: Annotated[Optional[pathlib.Path], typer.Option("--config", help="Path to a config file")] = None,
-) -> None:
-    from . import Config
-    from .db.tools.json_import import run
-
-    if config_file:
-        Config.from_file(config_file)
-
-    run(path)
 
 
 @app.command()
@@ -85,7 +73,7 @@ def playground(
             IPython.embed(display_banner=False)  # type: ignore[no-untyped-call]
 
 
-@app.command()
+@update.command(help="Update the database with a single month's data fetched as a CSV")
 def fetch(
     verbose: Annotated[bool, typer.Option(help="Sets logging level to DEBUG")] = False,
     headless: Annotated[bool, typer.Option(help="Use a headless browser")] = True,
@@ -96,7 +84,7 @@ def fetch(
     import os
 
     from . import config
-    from .lib.fetch import Fetcher
+    from .lib.fetch import Fetcher, format_csv
 
     if config_file:
         config.from_file(config_file)
@@ -112,7 +100,22 @@ def fetch(
         logging.getLogger("tmo.lib.fetch").setLevel(logging.DEBUG)
 
     fetcher = Fetcher(headless=headless)
-    csv = asyncio.run(fetcher.get_csv(date=datetime.date(2024, 12, 2)))
+    csv = asyncio.run(fetcher.get_csv(date=datetime.date.today()))
+    format_csv(csv)
+
+
+@update.command("bulk", help="Update the database in bulk with a JSON file")
+def bulk(
+    path: Annotated[pathlib.Path, typer.Option(help="path to json file")],
+    config_file: Annotated[Optional[pathlib.Path], typer.Option("--config", help="path to a config file")] = None,
+) -> None:
+    from . import Config
+    from .db.tools.json_import import run
+
+    if config_file:
+        Config.from_file(config_file)
+
+    run(path)
 
 
 @app.command()

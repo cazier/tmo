@@ -1,6 +1,8 @@
 import contextlib
+import csv
 import dataclasses
 import datetime
+import decimal
 import logging
 import os
 import pathlib
@@ -256,3 +258,83 @@ class Fetcher:
 
         logger.info("Deleting report from account")
         await self.page.get_by_role("menuitem", name="Delete", exact=True).click()
+
+
+def _find_number(raw: str) -> tuple[str, str]:
+    from tmo import config
+
+    for number, name in config.load.numbers.items():
+        if raw == number.replace("-", ""):
+            return number, name
+
+    return raw, "N/A"
+
+
+def _ensure_zero(value: str) -> decimal.Decimal:
+    amount = decimal.Decimal(value)
+
+    if amount != decimal.Decimal("0"):
+        raise ValueError("Need some more details for usage")
+
+    return amount
+
+
+def format_csv(data: str) -> dict[str, str | list[dict[str, int | str | decimal.Decimal | bool]]]:
+    # Removing special characters
+    data = data.replace("$", "")
+
+    header = ""
+    output: dict[str, str | list[dict[str, int | str | decimal.Decimal | bool]]] = {
+        "date": datetime.date.today().replace(day=1).isoformat(),
+        "subscribers": [],
+        "other": [],
+    }
+
+    taxes = decimal.Decimal(0)
+    service = decimal.Decimal(0)
+
+    for text in data.splitlines():
+        if text.startswith("Subscriber"):
+            header = text
+            continue
+
+        if header:
+            [reader] = csv.DictReader([text], header.split(","))
+
+            service += decimal.Decimal(reader["Plans"])
+            taxes += decimal.Decimal(reader["Taxes and Fees"])
+
+            number, name = _find_number(reader["Subscriber Number"])
+
+            if name == "N/A":
+                continue
+
+            output["subscribers"].append(
+                {
+                    "num": number,
+                    "name": name,
+                    "line": 0,
+                    "usage": 0,
+                    "phone": decimal.Decimal(reader["Equipment"]),
+                    "insurance": 0,
+                    "minutes": int(reader["Talk Minutes"]),
+                    "messages": int(reader["Text Messages"]),
+                    "data": decimal.Decimal(reader["Data "]),
+                }
+            )
+
+            for key in (
+                "Usage Charges",
+                "Services",
+                "One-time Charges",
+                "Immediate Charges",
+                "Credits and Adjustments",
+            ):
+                _ensure_zero(reader[key])
+
+    output["other"].append({"kind": "taxes", "value": taxes, "split": True})
+
+    for subscriber in output["subscribers"]:
+        subscriber["line"] = service / len(output["subscribers"])
+
+    return output
