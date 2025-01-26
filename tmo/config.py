@@ -96,6 +96,12 @@ class Api(BaseModel, validate_assignment=True):
     host: IPvAnyAddress = Field(default="0.0.0.0", validate_default=True)
 
 
+class Fetch(BaseModel, validate_assignment=True):
+    username: str
+    password: str
+    totp_secret: str = ""
+
+
 class Config(Sentinel, BaseSettings):
     model_config = SettingsConfigDict(env_nested_delimiter="__", env_prefix="TMO_")
 
@@ -103,6 +109,7 @@ class Config(Sentinel, BaseSettings):
     load: Load = Field(default_factory=Load)
     frontend: Frontend = Field(default_factory=Frontend)
     api: Api = Field(default_factory=Api)
+    fetch: Fetch | None = None
 
     @model_validator(mode="before")
     @classmethod

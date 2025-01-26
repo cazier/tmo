@@ -1,3 +1,5 @@
+import enum
+import logging
 import pathlib
 from typing import Annotated, Optional
 
@@ -81,6 +83,36 @@ def playground(
 
         with Session(engine) as session:
             IPython.embed(display_banner=False)  # type: ignore[no-untyped-call]
+
+
+@app.command()
+def fetch(
+    verbose: Annotated[bool, typer.Option(help="Sets logging level to DEBUG")] = False,
+    headless: Annotated[bool, typer.Option(help="Use a headless browser")] = True,
+    config_file: Annotated[Optional[pathlib.Path], typer.Option("--config", help="Path to a config file")] = None,
+) -> None:
+    import asyncio
+    import datetime
+    import os
+
+    from . import config
+    from .lib.fetch import Fetcher
+
+    if config_file:
+        config.from_file(config_file)
+
+    if not config.fetch:
+        typer.echo("Cannot fetch without an entry in the config file", err=True)
+        raise typer.Exit(1)
+
+    for key in ("username", "password", "totp_secret"):
+        os.environ[f"TMO_FETCH_{key}"] = getattr(config.fetch, key)
+
+    if verbose:
+        logging.getLogger("tmo.lib.fetch").setLevel(logging.DEBUG)
+
+    fetcher = Fetcher(headless=headless)
+    csv = asyncio.run(fetcher.get_csv(date=datetime.date(2024, 12, 2)))
 
 
 @app.command()

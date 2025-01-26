@@ -124,7 +124,7 @@ class Fetcher:
         logger.debug("Submitting user password")
         await self.page.get_by_role("button", name="Log in", exact=True).click()
 
-        if os.environ["TMO_FETCH_totp_secret"]:
+        if os.getenv("TMO_FETCH_totp_secret"):
             await self.handle_totp()
 
         await playwright.expect(self.page.get_by_role("button", name="Manage Accounts", exact=True)).to_be_visible(
