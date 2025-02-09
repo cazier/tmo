@@ -1,8 +1,8 @@
-import enum
 import logging
 import pathlib
 from typing import Annotated, Optional
 
+import arrow
 import typer
 import uvicorn
 
@@ -75,12 +75,12 @@ def playground(
 
 @update.command(help="Update the database with a single month's data fetched as a CSV")
 def fetch(
+    date: Annotated[Optional[str], typer.Option(help="Bill date (Format YYYY-MM-DD). Must exist on webpage")] = None,
     verbose: Annotated[bool, typer.Option(help="Sets logging level to DEBUG")] = False,
-    headless: Annotated[bool, typer.Option(help="Use a headless browser")] = True,
+    headed: Annotated[bool, typer.Option(help="Use a headed browser")] = False,
     config_file: Annotated[Optional[pathlib.Path], typer.Option("--config", help="Path to a config file")] = None,
 ) -> None:
     import asyncio
-    import datetime
     import os
 
     from . import config
@@ -99,8 +99,13 @@ def fetch(
     if verbose:
         logging.getLogger("tmo.lib.fetch").setLevel(logging.DEBUG)
 
-    fetcher = Fetcher(headless=headless)
-    csv = asyncio.run(fetcher.get_csv(date=datetime.date.today()))
+    if date:
+        _date = arrow.get(date)
+    else:
+        _date = arrow.now()
+
+    fetcher = Fetcher(headless=not headed)
+    csv = asyncio.run(fetcher.get_csv(date=_date))
     format_csv(csv)
 
 

@@ -1,7 +1,6 @@
 import contextlib
 import csv
 import dataclasses
-import datetime
 import decimal
 import logging
 import os
@@ -12,6 +11,7 @@ import secrets
 import time
 import typing
 
+import arrow
 import playwright.async_api as playwright
 import rich.logging
 
@@ -95,7 +95,7 @@ class Fetcher:
                 await self.context.close()
                 await self.browser.close()
 
-    async def get_csv(self, date: datetime.date) -> str:
+    async def get_csv(self, date: arrow.Arrow) -> str:
         async with self.session():
             await self.login()
             await self.create_report(date)
@@ -172,7 +172,7 @@ class Fetcher:
 
         raise ValueError("Could not find the account number from the dashboard page.")
 
-    async def create_report(self, date: datetime.date) -> None:
+    async def create_report(self, date: arrow.Arrow) -> None:
         self.report_id = secrets.token_hex(16)
 
         logger.info("Creating a new report named %s", self.report_id)
@@ -285,7 +285,6 @@ def format_csv(data: str) -> dict[str, str | list[dict[str, int | str | decimal.
 
     header = ""
     output: dict[str, str | list[dict[str, int | str | decimal.Decimal | bool]]] = {
-        "date": datetime.date.today().replace(day=1).isoformat(),
         "subscribers": [],
         "other": [],
     }
@@ -294,6 +293,10 @@ def format_csv(data: str) -> dict[str, str | list[dict[str, int | str | decimal.
     service = decimal.Decimal(0)
 
     for text in data.splitlines():
+        if text.startswith("Billing Period Ending"):
+            output["date"] = arrow.get(text, "MMMM YYYY").replace(day=1).isoformat()
+            continue
+
         if text.startswith("Subscriber"):
             header = text
             continue

@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 authors = [{name="Brendan Cazier", email = "520246+cazier@users.noreply.github.com"}]
 dependencies = [
+    "arrow>=1.3.0",
     "fastapi>=0.115.0",
     "httpx>=0.27.2",
     "jinja2>=3.1.4",
