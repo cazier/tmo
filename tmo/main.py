@@ -84,7 +84,7 @@ def fetch(
     import os
 
     from . import config
-    from .lib.fetch import Fetcher, format_csv
+    from .loaders.fetch import Fetcher, format_csv
 
     if config_file:
         config.from_file(config_file)
@@ -106,7 +106,7 @@ def fetch(
 
     fetcher = Fetcher(headless=not headed)
     csv = asyncio.run(fetcher.get_csv(date=_date))
-    format_csv(csv)
+    data = format_csv(csv)
 
 
 @update.command("bulk", help="Update the database in bulk with a JSON file")
@@ -115,7 +115,7 @@ def bulk(
     config_file: Annotated[Optional[pathlib.Path], typer.Option("--config", help="path to a config file")] = None,
 ) -> None:
     from . import Config
-    from .db.tools.json_import import run
+    from .loaders.bulk import run
 
     if config_file:
         Config.from_file(config_file)

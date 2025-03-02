@@ -15,7 +15,9 @@ import arrow
 import playwright.async_api as playwright
 import rich.logging
 
-from . import utilities
+from .. import config
+from ..lib import utilities
+from .models import Bill, Other, Subscriber
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -261,8 +263,6 @@ class Fetcher:
 
 
 def _find_number(raw: str) -> tuple[str, str]:
-    from tmo import config
-
     for number, name in config.load.numbers.items():
         if raw == number.replace("-", ""):
             return number, name
@@ -279,22 +279,19 @@ def _ensure_zero(value: str) -> decimal.Decimal:
     return amount
 
 
-def format_csv(data: str) -> dict[str, str | list[dict[str, int | str | decimal.Decimal | bool]]]:
+def format_csv(data: str) -> Bill:
     # Removing special characters
     data = data.replace("$", "")
 
+    bill: Bill
     header = ""
-    output: dict[str, str | list[dict[str, int | str | decimal.Decimal | bool]]] = {
-        "subscribers": [],
-        "other": [],
-    }
 
     taxes = decimal.Decimal(0)
     service = decimal.Decimal(0)
 
     for text in data.splitlines():
         if text.startswith("Billing Period Ending"):
-            output["date"] = arrow.get(text, "MMMM YYYY").replace(day=1).isoformat()
+            bill = Bill(date=arrow.get(text, "MMMM YYYY").replace(day=1).date())
             continue
 
         if text.startswith("Subscriber"):
@@ -312,18 +309,20 @@ def format_csv(data: str) -> dict[str, str | list[dict[str, int | str | decimal.
             if name == "N/A":
                 continue
 
-            output["subscribers"].append(
-                {
-                    "num": number,
-                    "name": name,
-                    "line": 0,
-                    "usage": 0,
-                    "phone": decimal.Decimal(reader["Equipment"]),
-                    "insurance": 0,
-                    "minutes": int(reader["Talk Minutes"]),
-                    "messages": int(reader["Text Messages"]),
-                    "data": decimal.Decimal(reader["Data "]),
-                }
+            bill.subscribers.append(
+                Subscriber.model_validate(
+                    {
+                        "name": name,
+                        "num": number,
+                        "minutes": reader["Talk Minutes"],
+                        "messages": reader["Text Messages"],
+                        "data": reader["Data "],
+                        "phone": reader["Equipment"],
+                        "line": 0,
+                        "insurance": 0,
+                        "usage": 0,
+                    }
+                )
             )
 
             for key in (
@@ -335,9 +334,9 @@ def format_csv(data: str) -> dict[str, str | list[dict[str, int | str | decimal.
             ):
                 _ensure_zero(reader[key])
 
-    output["other"].append({"kind": "taxes", "value": taxes, "split": True})
+    bill.other.append(Other(kind="taxes", value=taxes, split=True))
 
-    for subscriber in output["subscribers"]:
-        subscriber["line"] = service / len(output["subscribers"])
+    for subscriber in bill.subscribers:
+        subscriber.line = service / len(bill.subscribers)
 
-    return output
+    return bill
