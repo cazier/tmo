@@ -1,8 +1,6 @@
 import datetime
 import decimal
-import json
 import pathlib
-import typing
 
 import pydantic
 from sqlmodel import Session
@@ -10,33 +8,7 @@ from sqlmodel import Session
 from tmo import config
 from tmo.db.engines import start_engine
 from tmo.db.models import Bill, Charge, Detail, Subscriber
-
-
-class _SubscriberImport(pydantic.BaseModel):
-    name: str
-    num: str
-
-    minutes: int
-    messages: int
-    data: decimal.Decimal
-
-    phone: decimal.Decimal
-    line: decimal.Decimal
-    insurance: decimal.Decimal
-    usage: decimal.Decimal
-
-
-class _Other(pydantic.BaseModel):
-    kind: str
-    value: decimal.Decimal
-    split: bool = False
-
-
-class _Bill(pydantic.BaseModel):
-    date: datetime.date
-    subscribers: list[_SubscriberImport]
-    other: list[_Other] = pydantic.Field(default_factory=list)
-
+from tmo.loaders.models import Bill as _Bill
 
 _bill_cache: dict[datetime.date, Bill] = {}
 _user_cache: dict[str, Subscriber] = {}
@@ -48,10 +20,6 @@ class _NameMap:
 
     def __getitem__(self, key: str) -> str:
         return self._names.get(key, self._names["default"])
-
-
-def _load(path: pathlib.Path) -> dict[str, dict[str, typing.Any]]:
-    return typing.cast(dict[str, dict[str, typing.Any]], json.loads(path.read_text(encoding="utf-8")))
 
 
 def _fill(session: Session, bill: _Bill) -> None:

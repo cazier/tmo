@@ -3,6 +3,7 @@ import datetime
 import decimal
 import typing
 
+import arrow
 from pydantic import BaseModel, Field, dataclasses, field_validator, model_validator
 
 from ...config import config
@@ -82,8 +83,8 @@ class BillsRender(BaseModel):
 
     @property
     def months(self) -> typing.Annotated[tuple[datetime.date, datetime.date | None], Element("date", "Date")]:
-        last = (self.month.replace(day=1) - datetime.timedelta(days=5)).replace(day=1)
-        next = (self.month.replace(day=28) + datetime.timedelta(days=5)).replace(day=1)
+        last = arrow.get(self.month).shift(months=-1).replace(day=1).date()
+        next = arrow.get(self.month).shift(months=+1).replace(day=1).date()
 
         if next > datetime.date.today():
             return last, None

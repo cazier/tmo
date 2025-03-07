@@ -1,10 +1,14 @@
+import logging
 import pathlib
 from typing import Annotated, Optional
 
+import arrow
 import typer
 import uvicorn
 
 app = typer.Typer()
+update = typer.Typer()
+app.add_typer(update, name="update")
 
 
 @app.command()
@@ -29,20 +33,6 @@ def serve(
             reload_excludes=["./tests/*"] if reload else None,
             env_file=root,
         )
-
-
-@app.command("import")
-def import_from_json(
-    path: Annotated[pathlib.Path, typer.Option(help="path to json file")],
-    config_file: Annotated[Optional[pathlib.Path], typer.Option("--config", help="Path to a config file")] = None,
-) -> None:
-    from . import Config
-    from .db.tools.json_import import run
-
-    if config_file:
-        Config.from_file(config_file)
-
-    run(path)
 
 
 @app.command()
@@ -81,6 +71,56 @@ def playground(
 
         with Session(engine) as session:
             IPython.embed(display_banner=False)  # type: ignore[no-untyped-call]
+
+
+@update.command(help="Update the database with a single month's data fetched as a CSV")
+def fetch(
+    date: Annotated[Optional[str], typer.Option(help="Bill date (Format YYYY-MM-DD). Must exist on webpage")] = None,
+    verbose: Annotated[bool, typer.Option(help="Sets logging level to DEBUG")] = False,
+    headed: Annotated[bool, typer.Option(help="Use a headed browser")] = False,
+    config_file: Annotated[Optional[pathlib.Path], typer.Option("--config", help="Path to a config file")] = None,
+) -> None:
+    import asyncio
+    import os
+
+    from . import config
+    from .loaders.fetch import Fetcher, format_csv
+
+    if config_file:
+        config.from_file(config_file)
+
+    if not config.fetch:
+        typer.echo("Cannot fetch without an entry in the config file", err=True)
+        raise typer.Exit(1)
+
+    for key in ("username", "password", "totp_secret"):
+        os.environ[f"TMO_FETCH_{key}"] = getattr(config.fetch, key)
+
+    if verbose:
+        logging.getLogger("tmo.lib.fetch").setLevel(logging.DEBUG)
+
+    if date:
+        _date = arrow.get(date)
+    else:
+        _date = arrow.now()
+
+    fetcher = Fetcher(headless=not headed)
+    csv = asyncio.run(fetcher.get_csv(date=_date))
+    data = format_csv(csv)
+
+
+@update.command("bulk", help="Update the database in bulk with a JSON file")
+def bulk(
+    path: Annotated[pathlib.Path, typer.Option(help="path to json file")],
+    config_file: Annotated[Optional[pathlib.Path], typer.Option("--config", help="path to a config file")] = None,
+) -> None:
+    from . import Config
+    from .loaders.bulk import run
+
+    if config_file:
+        Config.from_file(config_file)
+
+    run(path)
 
 
 @app.command()
