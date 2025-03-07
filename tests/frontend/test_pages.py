@@ -1,6 +1,7 @@
 # mypy: disable-error-code="no-untyped-def"
 import typing
 
+import arrow
 import pytest
 import time_machine
 from fastapi.testclient import TestClient
@@ -12,7 +13,7 @@ pytestmark = [pytest.mark.usefixtures("insert_into_database")]
 
 @pytest.fixture
 def bill(bill: Bill):
-    with time_machine.travel(bill.date):
+    with time_machine.travel(arrow.get(bill.date).date()):
         yield bill
 
 

@@ -1,6 +1,6 @@
-import datetime
 import typing
 
+import arrow
 import pydantic
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
@@ -26,9 +26,10 @@ async def get_bill_pair(
         return await client.get(f"{client.base_url!s}{url.path}")
 
     if year and month:
-        date = datetime.date(year, month, 1)
+        date = arrow.get(year, month, 1).date()
+
     else:
-        date = datetime.date.today()
+        date = arrow.utcnow().date()
 
     ids_url = request.url_for("get_previous_ids")
 

@@ -83,8 +83,8 @@ class BillsRender(BaseModel):
 
     @property
     def months(self) -> typing.Annotated[tuple[datetime.date, datetime.date | None], Element("date", "Date")]:
-        last = arrow.get(self.month).shift(months=-1).replace(days=1).date()
-        next = arrow.get(self.month).shift(months=+1).replace(days=1).date()
+        last = arrow.get(self.month).shift(months=-1).replace(day=1).date()
+        next = arrow.get(self.month).shift(months=+1).replace(day=1).date()
 
         if next > datetime.date.today():
             return last, None
