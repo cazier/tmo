@@ -4,6 +4,7 @@ import datetime
 import random
 import typing
 
+import arrow
 import pytest
 from fastapi.testclient import TestClient
 
@@ -141,3 +142,28 @@ def test_get_bill_detailed(exists: bool, client: TestClient, bill: Bill, details
     else:
         response = client.get(f"/api/bill/{bill.id + 100}/detailed")
         assert response.status_code == 404 and response.json() == {"detail": "Bill could not be found"}
+
+
+@pytest.mark.parametrize("state", (-1, 0, 1), ids=("exists", "invalid day", "success"))
+def test_post_bill(state: int, client: TestClient, bill: Bill, database_values: dict[str, list[dict[str, typing.Any]]]):
+    if state == -1:
+        response = client.post("/api/bill", json={"date": bill.date.isoformat()})
+        assert response.status_code == 409 and response.json() == {
+            "detail": f"A bill with the date {bill.date} already exists (ID={bill.id})"
+        }
+
+    if state == 0:
+        response = client.post("/api/bill", json={"date": "2021-05-08"})
+        assert response.status_code == 400 and response.json() == {
+            "detail": "Bill day must be the first day of the month"
+        }
+
+    if state == 1:
+        date = arrow.get(database_values["bill"][-1]["date"]).shift(years=+1)
+
+        response = client.post("/api/bill", json={"date": date.date().isoformat()})
+        assert response.status_code == 200 and response.json() == {
+            "date": date.date().isoformat(),
+            "total": 0.0,
+            "id": len(database_values["bill"]) + 1,
+        }

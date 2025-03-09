@@ -9,7 +9,7 @@ from ...db.models.tables import Detail, Subscriber
 from ...lib.utilities import cast_as_qa
 from ..dependencies import SessionDependency
 from ..exceptions import APIException
-from .responses import ReadSubscriber, ReadSubscriberDetails
+from .models.get import ReadSubscriber, ReadSubscriberDetails
 
 router = fastapi.APIRouter(prefix="/subscriber")
 
@@ -43,6 +43,6 @@ async def get_subscriber(
     )
 
     if not subscriber:
-        raise APIException(status_code=404, detail="Subscriber could not be found")
+        raise APIException(status_code=fastapi.status.HTTP_404_NOT_FOUND, detail="Subscriber could not be found")
 
     return subscriber

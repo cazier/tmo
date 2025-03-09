@@ -6,7 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from tmo.db.models.tables import Detail, Subscriber
-from tmo.web.routers.responses import ReadSubscriberDetail
+from tmo.web.routers.models.get import ReadSubscriberDetail
 
 pytestmark = [pytest.mark.usefixtures("insert_into_database")]
 

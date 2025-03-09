@@ -10,6 +10,7 @@ import faker
 import fastapi.testclient
 import pytest
 from sqlmodel import Session, SQLModel, text
+from sqlmodel.pool import StaticPool
 
 from tmo import config
 from tmo.db.models import Bill, Subscriber
@@ -30,7 +31,7 @@ def session(database_values: dict[str, list[dict[str, typing.Any]]], request: py
     ):
         from tmo.db.engines import start_engine
 
-        engine = start_engine(connect_args={"check_same_thread": False})
+        engine = start_engine(connect_args={"check_same_thread": False, "pool": StaticPool})
 
         with Session(engine, autoflush=False) as _session:
             yield _session
