@@ -11,12 +11,13 @@ from ...db.models import Bill, Detail, Subscriber
 from ...lib.utilities import cast_as_qa
 from ..dependencies import SessionDependency
 from ..exceptions import APIException
-from .responses import ReadBill, ReadBillSubscribersChargesDetail, ReadBillSubscriberTotalsCharges
+from .models.get import ReadBill, ReadBillSubscribersChargesDetail, ReadBillSubscriberTotalsCharges
+from .models.post import PostBill
 
-router = fastapi.APIRouter(prefix="/bill")
+router = fastapi.APIRouter()
 
 
-@router.get("")
+@router.get("/bill")
 async def get_bills(
     *,
     start: typing.Annotated[int, fastapi.Query(ge=0)] = 0,
@@ -27,7 +28,7 @@ async def get_bills(
     return bills
 
 
-@router.get("/previous-ids")
+@router.get("/bill/previous-ids")
 async def get_previous_ids(
     *,
     before: datetime.date = fastapi.Query(
@@ -62,7 +63,7 @@ async def _get_bill(
     )
 
 
-@router.get("/{id}")
+@router.get("/bill/{id}")
 async def get_bill_id(
     *,
     id: int = fastapi.Path(ge=0),
@@ -71,11 +72,11 @@ async def get_bill_id(
     bill = await _get_bill(id=id, session=session)
 
     if not bill:
-        raise APIException(status_code=404, detail="Bill could not be found")
+        raise APIException(status_code=fastapi.status.HTTP_404_NOT_FOUND, detail="Bill could not be found")
     return bill
 
 
-@router.get("/{id}/detailed", include_in_schema=False)
+@router.get("/bill/{id}/detailed", include_in_schema=False)
 async def get_bill_detailed(
     *,
     id: int = fastapi.Path(ge=0),
@@ -84,11 +85,11 @@ async def get_bill_detailed(
     bill = await _get_bill(id=id, session=session)
 
     if not bill:
-        raise APIException(status_code=404, detail="Bill could not be found")
+        raise APIException(status_code=fastapi.status.HTTP_404_NOT_FOUND, detail="Bill could not be found")
     return bill
 
 
-@router.get("/{year}/{month}")
+@router.get("/bill/{year}/{month}")
 async def get_bill_date(
     *,
     year: typing.Annotated[int, pydantic.Field(ge=2000, le=3000)],
@@ -121,5 +122,29 @@ async def get_bill_date(
     )
 
     if not bill:
-        raise APIException(status_code=404, detail="Bill could not be found")
+        raise APIException(status_code=fastapi.status.HTTP_404_NOT_FOUND, detail="Bill could not be found")
+    return bill
+
+
+@router.post("/bill")
+async def post_bill(*, data: PostBill, session: SessionDependency) -> ReadBill:
+    if data.date.day != 1:
+        raise APIException(
+            status_code=fastapi.status.HTTP_400_BAD_REQUEST, detail="Bill day must be the first day of the month"
+        )
+
+    bill = session.exec(select(Bill).where(Bill.date == data.date)).first()
+
+    if bill is not None:
+        raise APIException(
+            status_code=fastapi.status.HTTP_409_CONFLICT,
+            detail=f"A bill with the date {data.date} already exists (ID={bill.id})",
+        )
+
+    bill = Bill(date=data.date)
+
+    session.add(bill)
+    session.commit()
+    session.refresh(bill)
+
     return bill
