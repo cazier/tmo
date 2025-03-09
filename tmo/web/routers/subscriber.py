@@ -10,11 +10,12 @@ from ...lib.utilities import cast_as_qa
 from ..dependencies import SessionDependency
 from ..exceptions import APIException
 from .models.get import ReadSubscriber, ReadSubscriberDetails
+from .models.post import PostSubscriber
 
-router = fastapi.APIRouter(prefix="/subscriber")
+router = fastapi.APIRouter()
 
 
-@router.get("")
+@router.get("/subscriber")
 async def get_subscribers(
     *,
     start: typing.Annotated[int, fastapi.Query(ge=0)] = 0,
@@ -24,7 +25,7 @@ async def get_subscribers(
     return session.exec(select(Subscriber).order_by(col(Subscriber.id).asc()).offset(start).limit(count)).all()
 
 
-@router.get("/{id}")
+@router.get("/subscriber/{id}")
 async def get_subscriber(
     *,
     id: typing.Annotated[int, fastapi.Path(ge=0)],
@@ -44,5 +45,24 @@ async def get_subscriber(
 
     if not subscriber:
         raise APIException(status_code=fastapi.status.HTTP_404_NOT_FOUND, detail="Subscriber could not be found")
+
+    return subscriber
+
+
+@router.post("/subscriber")
+async def post_subscriber(*, data: PostSubscriber, session: SessionDependency) -> ReadSubscriber:
+    subscriber = session.exec(select(Subscriber).where(Subscriber.number == data.number)).first()
+
+    if subscriber is not None:
+        raise APIException(
+            status_code=fastapi.status.HTTP_409_CONFLICT,
+            detail=f"A subscriber with the number {data.number} already exists (ID={subscriber.id})",
+        )
+
+    subscriber = Subscriber(name=data.name, number=data.number, format=data.format)
+
+    session.add(subscriber)
+    session.commit()
+    session.refresh(subscriber)
 
     return subscriber

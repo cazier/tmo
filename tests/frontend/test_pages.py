@@ -38,4 +38,4 @@ def test_page(by: typing.Literal["current", "date"], bill: Bill, client: TestCli
 
     assert response.status_code == 200
 
-    assert f"Bill { bill.date.year }.{bill.date.month:02d}" in response.text
+    assert f"Bill {bill.date.year}.{bill.date.month:02d}" in response.text
