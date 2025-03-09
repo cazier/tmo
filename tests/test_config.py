@@ -25,8 +25,8 @@ def gen_data() -> str:
 [database]
 dialect = "sqlite"
 path = "db.sqlite3"
-echo = {random.choice(('true', 'false'))}
-clear = {random.choice(('true', 'false'))}
+echo = {random.choice(("true", "false"))}
+clear = {random.choice(("true", "false"))}
 """
 
 

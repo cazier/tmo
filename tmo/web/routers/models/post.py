@@ -1,5 +1,9 @@
-from ....db.models.tables import BillScalar
+from ....db.models.tables import BillScalar, SubscriberScalar
 
 
 class PostBill(BillScalar):
+    pass
+
+
+class PostSubscriber(SubscriberScalar):
     pass
