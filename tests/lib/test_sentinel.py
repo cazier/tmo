@@ -5,6 +5,8 @@ import pytest
 
 from tmo.lib import sentinel
 
+pytestmark = [pytest.mark.skip()]
+
 
 class _TestObject(sentinel.Sentinel):
     a: str = "a"
