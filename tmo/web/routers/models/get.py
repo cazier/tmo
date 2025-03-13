@@ -52,6 +52,7 @@ class ReadCharge(ChargeScalar):
 
 class ReadDetail(DetailScalar):
     bill_id: int
+    subscriber_id: int
 
 
 class ReadBillSubscribersCharges(ReadBill):
