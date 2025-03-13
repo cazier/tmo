@@ -50,6 +50,10 @@ class ReadCharge(ChargeScalar):
     pass
 
 
+class ReadChargeId(ChargeScalar):
+    bill_id: int
+
+
 class ReadDetail(DetailScalar):
     bill_id: int
     subscriber_id: int

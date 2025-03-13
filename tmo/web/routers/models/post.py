@@ -3,7 +3,7 @@ import typing
 
 import pydantic
 
-from ....db.models.tables import BillScalar, DetailScalar, SubscriberScalar
+from ....db.models.tables import BillScalar, ChargeScalar, DetailScalar, SubscriberScalar
 
 
 class PostBill(BillScalar):
@@ -25,3 +25,7 @@ class PostDetail(DetailScalar):
 
         self.total = total
         return self
+
+
+class PostCharge(ChargeScalar):
+    pass

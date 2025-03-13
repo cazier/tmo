@@ -1,7 +1,4 @@
-# INSERT INTO detail ("id", "bill_id", "subscriber_id", "phone", "line", "insurance", "usage", "total", "minutes", "messages", "data") VALUES(  1,  1,  1, 13.65, 26.25, 11.61, 20.27,  71.78, 180, 838, 14.709);
-
 # mypy: disable-error-code="has-type,no-untyped-def"
-import secrets
 
 import pytest
 from fastapi.testclient import TestClient
@@ -9,17 +6,7 @@ from fastapi.testclient import TestClient
 pytestmark = [pytest.mark.usefixtures("insert_into_database")]
 
 
-def test_post_details(
-    client: TestClient,
-):
-    response = client.post("/api/bill", json={"date": "2000-01-01"})
-    assert response.status_code == 200
-    bill_id = response.json()["id"]
-
-    response = client.post("/api/subscriber", json={"name": secrets.token_hex(), "number": secrets.token_hex(4)})
-    assert response.status_code == 200
-    subscriber_id = response.json()["id"]
-
+def test_post_details(client: TestClient, bill_id: int, subscriber_id: int):
     detail = {
         "phone": 1.0,
         "line": 2.0,
