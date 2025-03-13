@@ -1,4 +1,5 @@
 import contextlib
+import ipaddress
 import pathlib
 import typing
 
@@ -93,7 +94,7 @@ class Frontend(BaseModel, validate_assignment=True):
 class Api(BaseModel, validate_assignment=True):
     debug: bool = False
     port: int = 8000
-    host: IPvAnyAddress = Field(default="0.0.0.0", validate_default=True)
+    host: IPvAnyAddress = Field(default=ipaddress.IPv4Address("0.0.0.0"))
 
 
 class Fetch(BaseModel, validate_assignment=True):
