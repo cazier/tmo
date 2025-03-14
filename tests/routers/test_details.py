@@ -6,7 +6,12 @@ from fastapi.testclient import TestClient
 pytestmark = [pytest.mark.usefixtures("insert_into_database")]
 
 
-def test_post_details(client: TestClient, bill_id: int, subscriber_id: int):
+@pytest.mark.parametrize("bill_id", (True, False), ids=("bill", "no_bill"), indirect=True)
+@pytest.mark.parametrize("subscriber_id", (True, False), ids=("subscriber", "no_subscriber"), indirect=True)
+def test_post_details(client: TestClient, bill_id: tuple[int, bool], subscriber_id: tuple[int, bool]):
+    _bill_id, _bill_exists = bill_id
+    _subscriber_id, _subscriber_exists = subscriber_id
+
     detail = {
         "phone": 1.0,
         "line": 2.0,
@@ -17,10 +22,18 @@ def test_post_details(client: TestClient, bill_id: int, subscriber_id: int):
         "data": 7,
     }
 
-    response = client.post("/api/detail", params={"bill": bill_id, "subscriber": subscriber_id}, json=detail)
-    assert response.status_code == 200 and response.json() == {
-        **detail,
-        "total": 10.0,
-        "bill_id": bill_id,
-        "subscriber_id": subscriber_id,
-    }
+    response = client.post("/api/detail", params={"bill": _bill_id, "subscriber": _subscriber_id}, json=detail)
+
+    if _bill_exists and _subscriber_exists:
+        assert response.status_code == 200 and response.json() == {
+            **detail,
+            "total": 10.0,
+            "bill_id": _bill_id,
+            "subscriber_id": _subscriber_id,
+        }
+
+    elif _bill_exists and not _subscriber_exists:
+        assert response.status_code == 404 and response.json() == {"detail": "Subscriber could not be found"}
+
+    else:
+        assert response.status_code == 404 and response.json() == {"detail": "Bill could not be found"}
