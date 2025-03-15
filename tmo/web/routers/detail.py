@@ -32,7 +32,14 @@ async def post_detail(
 
     detail = Detail.model_validate(data, update={"bill_id": bill_id, "subscriber_id": subscriber_id})
 
-    session.add(detail)
+    bill.details.append(detail)
+    subscriber.details.append(detail)
+
+    if bill not in subscriber.bills:
+        # This will automatically handle the reverse relationship too
+        subscriber.bills.append(bill)
+
+    session.add(bill)
     session.commit()
     session.refresh(detail)
 

@@ -17,5 +17,8 @@ def test_post_charges(client: TestClient, bill_id: tuple[int, bool]):
         assert response.status_code == 200 and (id := response.json()["id"])
         assert response.json() == {**charge, "bill_id": _bill_id, "id": id}
 
+        response = client.get(f"/api/bill/{_bill_id}")
+        assert response.status_code == 200 and charge in response.json()["charges"]
+
     else:
         assert response.status_code == 404 and response.json() == {"detail": "Bill could not be found"}
