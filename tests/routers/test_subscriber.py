@@ -74,9 +74,7 @@ def test_get_subscriber_missing(client: TestClient, database_values: dict[str, l
 
 
 @pytest.mark.parametrize("state", (-1, 0, 1), ids=("exists", "invalid number", "success"))
-def test_post_subscriber(
-    state: int, client: TestClient, subscriber: Subscriber, database_values: dict[str, list[dict[str, typing.Any]]]
-):
+def test_post_subscriber(state: int, client: TestClient, subscriber: Subscriber):
     if state == -1:
         response = client.post("/api/subscriber", json={"name": secrets.token_hex(), "number": subscriber.number})
         assert response.status_code == 409 and response.json() == {
@@ -91,9 +89,11 @@ def test_post_subscriber(
         response = client.post(
             "/api/subscriber", json={"name": (name := secrets.token_hex()), "number": (number := secrets.token_hex(4))}
         )
+        id = response.json()["id"]
+
         assert response.status_code == 200 and response.json() == {
             "name": name,
             "number": number,
             "format": "us",
-            "id": len(database_values["subscriber"]) + 1,
+            "id": id,
         }

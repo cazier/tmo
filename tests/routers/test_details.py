@@ -19,18 +19,28 @@ def test_post_details(client: TestClient, bill_id: tuple[int, bool], subscriber_
         "usage": 4.0,
         "minutes": 5,
         "messages": 6,
-        "data": 7,
+        "data": 7.0,
     }
 
     response = client.post("/api/detail", params={"bill": _bill_id, "subscriber": _subscriber_id}, json=detail)
 
     if _bill_exists and _subscriber_exists:
-        assert response.status_code == 200 and response.json() == {
+        assert response.status_code == 200 and (id := response.json()["id"])
+        assert response.json() == {
             **detail,
             "total": 10.0,
             "bill_id": _bill_id,
             "subscriber_id": _subscriber_id,
+            "id": id,
         }
+
+        response = client.get(f"/api/bill/{_bill_id}")
+        assert response.status_code == 200 and _subscriber_id in [
+            subscriber["id"] for subscriber in response.json()["subscribers"]
+        ]
+
+        response = client.get(f"/api/subscriber/{_subscriber_id}")
+        assert response.status_code == 200 and id in [detail["id"] for detail in response.json()["details"]]
 
     elif _bill_exists and not _subscriber_exists:
         assert response.status_code == 404 and response.json() == {"detail": "Subscriber could not be found"}
