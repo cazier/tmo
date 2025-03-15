@@ -21,10 +21,14 @@ SERVICES: tuple[str, ...] = ("netflix", "hulu")
 FIELDS: tuple[str, ...] = ("phone", "line", "insurance", "usage", "minutes", "messages", "data")
 
 
+def pytest_addoption(parser: pytest.Parser) -> None:
+    parser.addoption("--sql-echo", action="store_true", default=False)
+
+
 @pytest.fixture(scope="module")
 def session(database_values: dict[str, list[dict[str, typing.Any]]], request: pytest.FixtureRequest):
     with config.patch(
-        database={"dialect": "memory", "echo": request.config.get_verbosity() > 0},
+        database={"dialect": "memory", "echo": request.config.getoption("--sql-echo")},
         frontend={
             "colors": {subscriber["number"]: faker.Faker().hex_color() for subscriber in database_values["subscriber"]}
         },
