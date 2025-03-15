@@ -19,6 +19,7 @@ def test_post_charges(client: TestClient, bill_id: tuple[int, bool]):
 
         response = client.get(f"/api/bill/{_bill_id}")
         assert response.status_code == 200 and charge in response.json()["charges"]
+        assert response.json()["total"] == 1.0
 
     else:
         assert response.status_code == 404 and response.json() == {"detail": "Bill could not be found"}

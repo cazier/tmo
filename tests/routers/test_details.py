@@ -35,9 +35,9 @@ def test_post_details(client: TestClient, bill_id: tuple[int, bool], subscriber_
         }
 
         response = client.get(f"/api/bill/{_bill_id}")
-        assert response.status_code == 200 and _subscriber_id in [
-            subscriber["id"] for subscriber in response.json()["subscribers"]
-        ]
+        assert response.status_code == 200
+        assert _subscriber_id in [subscriber["id"] for subscriber in response.json()["subscribers"]]
+        assert response.json()["total"] == 10.0
 
         response = client.get(f"/api/subscriber/{_subscriber_id}")
         assert response.status_code == 200 and id in [detail["id"] for detail in response.json()["details"]]

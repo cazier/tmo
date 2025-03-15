@@ -27,6 +27,7 @@ async def post_charge(
     charge = Charge.model_validate(data, update={"bill_id": bill_id})
 
     bill.charges.append(charge)
+    bill.update_total()
 
     session.add(bill)
     session.commit()

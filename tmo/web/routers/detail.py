@@ -33,6 +33,8 @@ async def post_detail(
     detail = Detail.model_validate(data, update={"bill_id": bill_id, "subscriber_id": subscriber_id})
 
     bill.details.append(detail)
+    bill.update_total()
+
     subscriber.details.append(detail)
 
     if bill not in subscriber.bills:
