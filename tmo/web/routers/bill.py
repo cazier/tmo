@@ -141,7 +141,7 @@ async def post_bill(*, data: PostBill, session: SessionDependency) -> ReadBill:
             detail=f"A bill with the date {data.date} already exists (ID={bill.id})",
         )
 
-    bill = Bill(date=data.date)
+    bill = Bill(date=data.date, total=data.total)
 
     session.add(bill)
     session.commit()

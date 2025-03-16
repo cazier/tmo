@@ -160,8 +160,9 @@ def test_post_bill(state: int, client: TestClient, bill: Bill, database_values: 
 
     if state == 1:
         date = arrow.get(database_values["bill"][-1]["date"]).shift(years=+1)
+        total = float(f"{random.randint(100, 400)}.{random.randint(0, 99)}")
 
-        response = client.post("/api/bill", json={"date": date.date().isoformat()})
+        response = client.post("/api/bill", json={"date": date.date().isoformat(), "total": total})
 
         assert response.status_code == 200 and (id := response.json()["id"])
-        assert response.json() == {"date": date.date().isoformat(), "total": 0.0, "id": id}
+        assert response.json() == {"date": date.date().isoformat(), "total": total, "id": id}
