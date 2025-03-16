@@ -73,6 +73,22 @@ def test_get_subscriber_missing(client: TestClient, database_values: dict[str, l
     assert response.status_code == 404
 
 
+@pytest.mark.parametrize("key", ("name", "number", "both", "neither"))
+def test_get_subscriber_lookup(key: str, client: TestClient, subscriber: Subscriber):
+    if key in ("both", "neither"):
+        response = client.get(
+            "/api/subscriber/lookup",
+            params={"name": secrets.token_hex(2), "number": secrets.token_hex(2)} if key == "both" else {},
+        )
+        assert response.status_code == 400 and response.json() == {
+            "detail": "Exactly one of name or number must be provided"
+        }
+
+    else:
+        response = client.get("/api/subscriber/lookup", params={key: getattr(subscriber, key)})
+        assert response.status_code == 200 and response.json()["id"] == subscriber.id
+
+
 @pytest.mark.parametrize("state", (-1, 0, 1), ids=("exists", "invalid number", "success"))
 def test_post_subscriber(state: int, client: TestClient, subscriber: Subscriber):
     if state == -1:

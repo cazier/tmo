@@ -2,6 +2,7 @@
 import typing
 
 import fastapi
+import pydantic
 from sqlalchemy.orm import contains_eager
 from sqlmodel import col, select
 
@@ -23,6 +24,37 @@ async def get_subscribers(
     session: SessionDependency,
 ) -> list[ReadSubscriber]:
     return session.exec(select(Subscriber).order_by(col(Subscriber.id).asc()).offset(start).limit(count)).all()
+
+
+class Lookup(pydantic.BaseModel):
+    name: str = ""
+    number: str = ""
+
+    @pydantic.model_validator(mode="after")
+    def _ensure_exactly_one(self) -> typing.Self:
+        assert (self.name or self.number) and not (self.name and self.number)
+        return self
+
+
+@router.get("/subscriber/lookup")
+async def get_subscriber_lookup(*, name: str = "", number: str = "", session: SessionDependency) -> ReadSubscriber:
+    if name and number or (not name and not number):
+        raise APIException(
+            status_code=fastapi.status.HTTP_400_BAD_REQUEST, detail="Exactly one of name or number must be provided"
+        )
+
+    if name:
+        sql_query = Subscriber.name == name
+
+    if number:
+        sql_query = Subscriber.number == number
+
+    subscriber = session.exec(select(Subscriber).where(sql_query)).one_or_none()
+
+    if not subscriber:
+        raise APIException(status_code=fastapi.status.HTTP_404_NOT_FOUND, detail="Subscriber could not be found")
+
+    return subscriber
 
 
 @router.get("/subscriber/{id}")
