@@ -52,7 +52,7 @@ class DetailScalar(SQLModel):
 
     minutes: typing.Annotated[int, "#"] = Field(default=0)
     messages: typing.Annotated[int, "#"] = Field(default=0)
-    data: typing.Annotated[JsonDecimal, "#"] = decimal_field(decimal_places=3)
+    data: typing.Annotated[JsonDecimal, "#"] = decimal_field(decimal_places=4)
 
 
 class ChargeScalar(SQLModel):
