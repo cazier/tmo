@@ -1,3 +1,4 @@
+import datetime
 import typing
 
 from sqlalchemy import event
@@ -6,8 +7,8 @@ from . import Bill
 
 
 @event.listens_for(Bill.date, "set")
-def _update_bill_date(target: Bill, *_: typing.Any) -> None:
-    if target.date:
+def _update_bill_date(target: Bill, value: datetime.date, oldvalue: datetime.date, _: typing.Any) -> None:
+    if value != oldvalue and target.date:
         raise AttributeError("Cannot change the date on an existing row.")
 
 
