@@ -2,6 +2,7 @@ import datetime
 import decimal
 import pathlib
 
+import httpx
 import pydantic
 from sqlmodel import Session
 
@@ -22,18 +23,18 @@ class _NameMap:
         return self._names.get(key, self._names["default"])
 
 
-def _fill(session: Session, bill: _Bill) -> None:
+def _fill_to_sql(session: Session, bill: _Bill) -> None:
     _name_map = _NameMap(config.load.names)
     _bill = _bill_cache.setdefault(bill.date, Bill(date=bill.date))
 
-    for other in bill.other:
-        charge = Charge(name=other.kind, total=other.value, split=other.split, bill=_bill)
-        session.add(charge)
+    for charge in bill.charges:
+        _charge = Charge(name=charge.name, total=charge.total, split=charge.split, bill=_bill)
+        session.add(_charge)
 
     for _data in bill.subscribers:
         surname = _name_map[_data.name]
         name = _data.name + " " + surname
-        user = _user_cache.setdefault(_data.num, Subscriber(name=name, number=_data.num))
+        user = _user_cache.setdefault(_data.number, Subscriber(name=name, number=_data.number))
         user.bills.append(_bill)
 
         detail = Detail(
@@ -63,9 +64,20 @@ def run(path: pathlib.Path) -> None:
 
     with Session(engine) as session:
         for bill in bills:
-            _fill(session, bill)
+            _fill_to_sql(session, bill)
 
         session.commit()
+
+
+@pydantic.validate_call
+def api(data: pathlib.Path | _Bill) -> bool:
+    if isinstance(data, pathlib.Path):
+        data = _Bill.model_validate_json(data.read_text(encoding="utf8"))
+
+    with httpx.Client(base_url="http://127.0.0.1:8000") as client:
+        resp = client.post("/api/fill", json=data.model_dump(mode="json"))
+
+    return resp.is_success
 
 
 if __name__ == "__main__":

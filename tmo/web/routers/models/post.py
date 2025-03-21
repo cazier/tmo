@@ -29,3 +29,12 @@ class PostDetail(DetailScalar):
 
 class PostCharge(ChargeScalar):
     pass
+
+
+class _FillSubscriber(PostSubscriber, PostDetail):
+    pass
+
+
+class PostFilledBill(PostBill):
+    subscribers: list[_FillSubscriber] = pydantic.Field(default_factory=list)
+    charges: list[PostCharge] = pydantic.Field(default_factory=list)

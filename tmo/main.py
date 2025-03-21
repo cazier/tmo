@@ -84,6 +84,7 @@ def fetch(
     import os
 
     from . import config
+    from .loaders.bulk import api
     from .loaders.fetch import Fetcher, format_csv
 
     if config_file:
@@ -101,12 +102,17 @@ def fetch(
 
     if date:
         _date = arrow.get(date)
+
     else:
         _date = arrow.now()
 
     fetcher = Fetcher(headless=not headed)
     csv = asyncio.run(fetcher.get_csv(date=_date))
+
     data = format_csv(csv)
+    api(data=data)
+
+    raise typer.Exit(0)
 
 
 @update.command("bulk", help="Update the database in bulk with a JSON file")

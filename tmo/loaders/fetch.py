@@ -17,7 +17,7 @@ import rich.logging
 
 from .. import config
 from ..lib import utilities
-from .models import Bill, Other, Subscriber
+from .models import Bill, Charge, Subscriber
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -283,17 +283,18 @@ def format_csv(data: str) -> Bill:
     # Removing special characters
     data = data.replace("$", "")
 
-    bill: Bill
     header = ""
 
-    taxes = decimal.Decimal(0)
-    service = decimal.Decimal(0)
+    taxes = decimal.Decimal("0")
+    service = decimal.Decimal("0")
 
     for text in data.splitlines():
         if text.startswith("Billing Period Ending"):
-            bill = Bill(date=arrow.get(text, "MMMM YYYY").replace(day=1).date())
-            continue
+            break
 
+    bill = Bill(date=arrow.get(text, "MMMM YYYY").replace(day=1).shift(months=+1).date())
+
+    for text in data.splitlines():
         if text.startswith("Subscriber"):
             header = text
             continue
@@ -313,7 +314,7 @@ def format_csv(data: str) -> Bill:
                 Subscriber.model_validate(
                     {
                         "name": name,
-                        "num": number,
+                        "number": number,
                         "minutes": reader["Talk Minutes"],
                         "messages": reader["Text Messages"],
                         "data": reader["Data "],
@@ -334,9 +335,17 @@ def format_csv(data: str) -> Bill:
             ):
                 _ensure_zero(reader[key])
 
-    bill.other.append(Other(kind="taxes", value=taxes, split=True))
+    bill.charges.append(Charge(name="taxes", split=True, total=taxes))
 
     for subscriber in bill.subscribers:
         subscriber.line = service / len(bill.subscribers)
+
+    bill.total = sum(
+        (
+            *(charge.total for charge in bill.charges),
+            *(sub.phone + sub.line + sub.insurance + sub.usage for sub in bill.subscribers),
+        ),
+        start=decimal.Decimal(),
+    )
 
     return bill

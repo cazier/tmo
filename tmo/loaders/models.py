@@ -6,7 +6,7 @@ import pydantic
 
 class Subscriber(pydantic.BaseModel):
     name: str
-    num: str
+    number: str
 
     minutes: int
     messages: int
@@ -18,13 +18,19 @@ class Subscriber(pydantic.BaseModel):
     usage: decimal.Decimal
 
 
-class Other(pydantic.BaseModel):
-    kind: str
-    value: decimal.Decimal
+class Charge(pydantic.BaseModel):
+    name: str
     split: bool = False
+    total: decimal.Decimal
+
+
+class _Bill(pydantic.BaseModel):
+    date: datetime.date
+    total: decimal.Decimal = pydantic.Field(default_factory=decimal.Decimal)
 
 
 class Bill(pydantic.BaseModel):
     date: datetime.date
+    total: decimal.Decimal = pydantic.Field(default_factory=decimal.Decimal)
     subscribers: list[Subscriber] = pydantic.Field(default_factory=list)
-    other: list[Other] = pydantic.Field(default_factory=list)
+    charges: list[Charge] = pydantic.Field(default_factory=list)
