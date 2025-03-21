@@ -1,22 +1,11 @@
 # mypy: disable-error-code="return-value"
-import fastapi
 from sqlmodel import select
 
 from ...db.models import Bill, Charge, Detail, Subscriber
 from ..dependencies import SessionDependency
-from .bill import router as bill
-from .charge import router as charge
-from .detail import router as detail
+from . import api
 from .models.get import ReadBill
 from .models.post import PostFilledBill
-from .subscriber import router as subscriber
-
-api = fastapi.APIRouter(prefix="/api", include_in_schema=True)
-
-api.include_router(bill)
-api.include_router(charge)
-api.include_router(detail)
-api.include_router(subscriber)
 
 
 @api.post("/fill")

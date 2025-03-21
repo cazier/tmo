@@ -8,7 +8,7 @@ from .. import Config, config
 from .exceptions import APIException
 from .frontend import static, templates
 from .frontend.pages import frontend
-from .routers.api import api
+from .routers import api
 
 Config.from_file(os.environ["TMO_UVICORN_CONFIG_PATH"])
 
