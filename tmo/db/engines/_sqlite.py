@@ -4,7 +4,7 @@ import typing
 from sqlalchemy import Engine
 from sqlmodel import create_engine
 
-from tmo.config import Memory, Sqlite
+from ...config import Memory, Sqlite
 
 
 def init(config: Sqlite | Memory, connect_args: dict[str, typing.Any] | None = None) -> Engine:

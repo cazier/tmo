@@ -121,12 +121,12 @@ def bulk(
     config_file: Annotated[Optional[pathlib.Path], typer.Option("--config", help="path to a config file")] = None,
 ) -> None:
     from . import Config
-    from .loaders.bulk import run
+    from .loaders.bulk import write_db
 
     if config_file:
         Config.from_file(config_file)
 
-    run(path)
+    write_db(path)
 
 
 @app.command()

@@ -17,7 +17,7 @@ import rich.logging
 
 from .. import config
 from ..lib import utilities
-from .models import Bill, Charge, Subscriber
+from ..web.routers.models.post import FillSubscriber, PostCharge, PostFilledBill
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -279,7 +279,7 @@ def _ensure_zero(value: str) -> decimal.Decimal:
     return amount
 
 
-def format_csv(data: str) -> Bill:
+def format_csv(data: str) -> PostFilledBill:
     # Removing special characters
     data = data.replace("$", "")
 
@@ -292,7 +292,7 @@ def format_csv(data: str) -> Bill:
         if text.startswith("Billing Period Ending"):
             break
 
-    bill = Bill(date=arrow.get(text, "MMMM YYYY").replace(day=1).shift(months=+1).date())
+    bill = PostFilledBill(date=arrow.get(text, "MMMM YYYY").replace(day=1).shift(months=+1).date())
 
     for text in data.splitlines():
         if text.startswith("Subscriber"):
@@ -311,7 +311,7 @@ def format_csv(data: str) -> Bill:
                 continue
 
             bill.subscribers.append(
-                Subscriber.model_validate(
+                FillSubscriber.model_validate(
                     {
                         "name": name,
                         "number": number,
@@ -335,7 +335,7 @@ def format_csv(data: str) -> Bill:
             ):
                 _ensure_zero(reader[key])
 
-    bill.charges.append(Charge(name="taxes", split=True, total=taxes))
+    bill.charges.append(PostCharge(name="taxes", split=True, total=taxes))
 
     for subscriber in bill.subscribers:
         subscriber.line = service / len(bill.subscribers)

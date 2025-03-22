@@ -31,10 +31,10 @@ class PostCharge(ChargeScalar):
     pass
 
 
-class _FillSubscriber(PostSubscriber, PostDetail):
+class FillSubscriber(PostSubscriber, PostDetail):
     pass
 
 
 class PostFilledBill(PostBill):
-    subscribers: list[_FillSubscriber] = pydantic.Field(default_factory=list)
+    subscribers: list[FillSubscriber] = pydantic.Field(default_factory=list)
     charges: list[PostCharge] = pydantic.Field(default_factory=list)
