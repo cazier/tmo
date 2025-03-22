@@ -217,6 +217,15 @@ class TestBillsRender:
         with config.patch(frontend={"dependents": dependents}):
             assert b.owed == total
 
+    def test_total_split_charges(self):
+        current = [
+            NS(name="111", total=decimal.Decimal(111), split=True),
+            NS(name="222", total=decimal.Decimal(222), split=False),
+        ]
+
+        b = filters.BillsRender.model_construct(current=NS(charges=current, subscribers=[1, 2]))
+        assert b.split_charges == decimal.Decimal("55.5")
+
     def test_charges(self):
         current = [
             NS(name="111", total=decimal.Decimal(111)),
