@@ -4,11 +4,12 @@ import typing
 from sqlalchemy import Engine
 from sqlmodel import create_engine
 
-from tmo.config import Memory, Sqlite
+from ...config import Memory, Sqlite
 
 
 def init(config: Sqlite | Memory, connect_args: dict[str, typing.Any] | None = None) -> Engine:
     connect_args = connect_args or {}
+    pool = connect_args.pop("pool", None)
 
     url = "sqlite://"
 
@@ -20,6 +21,6 @@ def init(config: Sqlite | Memory, connect_args: dict[str, typing.Any] | None = N
 
         url = f"{url}/{path.resolve()}"
 
-    engine = create_engine(url, connect_args=connect_args)
+    engine = create_engine(url, connect_args=connect_args, poolclass=pool)
 
     return engine

@@ -1,4 +1,5 @@
 import contextlib
+import ipaddress
 import pathlib
 import typing
 
@@ -54,6 +55,7 @@ class Postgres(_Databases):
 class Load(BaseModel, validate_assignment=True):
     numbers: dict[str, str] = Field(default_factory=dict)
     names: dict[typing.Literal["default"] | str, str] = Field(default_factory=dict)
+    swap: dict[str, dict[str, str]] = Field(default_factory=dict)
 
     @field_validator("names", mode="before")
     @classmethod
@@ -93,7 +95,7 @@ class Frontend(BaseModel, validate_assignment=True):
 class Api(BaseModel, validate_assignment=True):
     debug: bool = False
     port: int = 8000
-    host: IPvAnyAddress = Field(default="0.0.0.0", validate_default=True)
+    host: IPvAnyAddress = Field(default=ipaddress.IPv4Address("0.0.0.0"))
 
 
 class Fetch(BaseModel, validate_assignment=True):

@@ -7,7 +7,7 @@ import arrow
 from pydantic import BaseModel, Field, dataclasses, field_validator, model_validator
 
 from ...config import config
-from ..routers.responses import BillRender, SubscriberReadWithDetails
+from ..routers.models.get import BillRender, SubscriberReadWithDetails
 
 Unset = object()
 Skip = object()
@@ -45,7 +45,7 @@ class Charts(BaseModel):
     messages: list[int]
 
 
-_list = Field(default_factory=list)
+_list = Field(default_factory=list)  # type: ignore
 
 
 class _Shared(BaseModel):

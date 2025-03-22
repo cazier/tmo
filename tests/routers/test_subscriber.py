@@ -1,12 +1,13 @@
 # mypy: disable-error-code="has-type,no-untyped-def"
 import contextlib
+import secrets
 import typing
 
 import pytest
 from fastapi.testclient import TestClient
 
 from tmo.db.models.tables import Detail, Subscriber
-from tmo.web.routers.responses import ReadSubscriberDetail
+from tmo.web.routers.models.get import ReadSubscriberDetail
 
 pytestmark = [pytest.mark.usefixtures("insert_into_database")]
 
@@ -41,7 +42,7 @@ def test_model_validate(
 
 
 @pytest.mark.parametrize("count", (5, -1), ids=("paginated", "default"))
-def test_get_subscribers(count: int, client: TestClient, database_values: dict[str, list[dict[str, typing.Any]]]):
+def test_get_subscribers(count: int, client: TestClient):
     if count < 0:
         response = client.get("/api/subscriber")
         count = 10
@@ -70,3 +71,45 @@ def test_get_subscriber_missing(client: TestClient, database_values: dict[str, l
 
     response = client.get(f"/api/subscriber/{id}")
     assert response.status_code == 404
+
+
+@pytest.mark.parametrize("key", ("name", "number", "both", "neither"))
+def test_get_subscriber_lookup(key: str, client: TestClient, subscriber: Subscriber):
+    if key in ("both", "neither"):
+        response = client.get(
+            "/api/subscriber/lookup",
+            params={"name": secrets.token_hex(2), "number": secrets.token_hex(2)} if key == "both" else {},
+        )
+        assert response.status_code == 400 and response.json() == {
+            "detail": "Exactly one of name or number must be provided"
+        }
+
+    else:
+        response = client.get("/api/subscriber/lookup", params={key: getattr(subscriber, key)})
+        assert response.status_code == 200 and response.json()["id"] == subscriber.id
+
+
+@pytest.mark.parametrize("state", (-1, 0, 1), ids=("exists", "invalid number", "success"))
+def test_post_subscriber(state: int, client: TestClient, subscriber: Subscriber):
+    if state == -1:
+        response = client.post("/api/subscriber", json={"name": secrets.token_hex(), "number": subscriber.number})
+        assert response.status_code == 409 and response.json() == {
+            "detail": f"A subscriber with the number {subscriber.number} already exists (ID={subscriber.id})"
+        }
+
+    if state == 0:
+        response = client.post("/api/subscriber", json={"name": secrets.token_hex(16), "number": secrets.token_hex(16)})
+        assert response.status_code == 422
+
+    if state == 1:
+        response = client.post(
+            "/api/subscriber", json={"name": (name := secrets.token_hex()), "number": (number := secrets.token_hex(4))}
+        )
+        id = response.json()["id"]
+
+        assert response.status_code == 200 and response.json() == {
+            "name": name,
+            "number": number,
+            "format": "us",
+            "id": id,
+        }

@@ -10,7 +10,7 @@ P = typing.ParamSpec("P")
 
 
 class Sentinel(pydantic.BaseModel):
-    def __init__(self, *args: P.args, **kwargs: P.kwargs):
+    def __init__(self, *args: P.args, **kwargs: P.kwargs):  # type: ignore[valid-type]
         global _UPDATE_SENTINEL, _sentinel
 
         super().__init__(*args, **kwargs)

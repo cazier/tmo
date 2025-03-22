@@ -10,6 +10,7 @@ import faker
 import fastapi.testclient
 import pytest
 from sqlmodel import Session, SQLModel, text
+from sqlmodel.pool import StaticPool
 
 from tmo import config
 from tmo.db.models import Bill, Subscriber
@@ -20,17 +21,21 @@ SERVICES: tuple[str, ...] = ("netflix", "hulu")
 FIELDS: tuple[str, ...] = ("phone", "line", "insurance", "usage", "minutes", "messages", "data")
 
 
+def pytest_addoption(parser: pytest.Parser) -> None:
+    parser.addoption("--sql-echo", action="store_true", default=False)
+
+
 @pytest.fixture(scope="module")
 def session(database_values: dict[str, list[dict[str, typing.Any]]], request: pytest.FixtureRequest):
     with config.patch(
-        database={"dialect": "memory", "echo": request.config.get_verbosity() > 0},
+        database={"dialect": "memory", "echo": request.config.getoption("--sql-echo")},
         frontend={
             "colors": {subscriber["number"]: faker.Faker().hex_color() for subscriber in database_values["subscriber"]}
         },
     ):
         from tmo.db.engines import start_engine
 
-        engine = start_engine(connect_args={"check_same_thread": False})
+        engine = start_engine(connect_args={"check_same_thread": False, "pool": StaticPool})
 
         with Session(engine, autoflush=False) as _session:
             yield _session

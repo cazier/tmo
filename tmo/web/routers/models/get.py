@@ -3,7 +3,7 @@ import typing
 
 import pydantic
 
-from ...db.models.tables import BillScalar, ChargeScalar, DetailScalar, JsonDecimal, SubscriberScalar
+from ....db.models.tables import BillScalar, ChargeScalar, DetailScalar, JsonDecimal, SubscriberScalar
 
 
 class _Details(DetailScalar):
@@ -50,8 +50,15 @@ class ReadCharge(ChargeScalar):
     pass
 
 
-class ReadDetail(DetailScalar):
+class ReadChargeId(ChargeScalar):
+    id: int
     bill_id: int
+
+
+class ReadDetail(DetailScalar):
+    id: int
+    bill_id: int
+    subscriber_id: int
 
 
 class ReadBillSubscribersCharges(ReadBill):

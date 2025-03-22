@@ -84,6 +84,7 @@ def fetch(
     import os
 
     from . import config
+    from .loaders.bulk import api
     from .loaders.fetch import Fetcher, format_csv
 
     if config_file:
@@ -97,16 +98,21 @@ def fetch(
         os.environ[f"TMO_FETCH_{key}"] = getattr(config.fetch, key)
 
     if verbose:
-        logging.getLogger("tmo.lib.fetch").setLevel(logging.DEBUG)
+        logging.getLogger("tmo.loaders.fetch").setLevel(logging.DEBUG)
 
     if date:
         _date = arrow.get(date)
+
     else:
         _date = arrow.now()
 
     fetcher = Fetcher(headless=not headed)
     csv = asyncio.run(fetcher.get_csv(date=_date))
+
     data = format_csv(csv)
+
+    if not api(data=data):
+        raise typer.Exit(1)
 
 
 @update.command("bulk", help="Update the database in bulk with a JSON file")
@@ -115,12 +121,12 @@ def bulk(
     config_file: Annotated[Optional[pathlib.Path], typer.Option("--config", help="path to a config file")] = None,
 ) -> None:
     from . import Config
-    from .loaders.bulk import run
+    from .loaders.bulk import write_db
 
     if config_file:
         Config.from_file(config_file)
 
-    run(path)
+    write_db(path)
 
 
 @app.command()

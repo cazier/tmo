@@ -47,7 +47,7 @@ testing = [
 dev-dependencies = [
     "coverage==7.6.9",
     "faker>=30.1.0",
-    "ipython>=8.28.0",
+    "ipython~=8.0",
     "isort>=5.13.2",
     "mypy>=1.11.2",
     "pdbr>=0.8.9",

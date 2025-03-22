@@ -17,7 +17,7 @@ import rich.logging
 
 from .. import config
 from ..lib import utilities
-from .models import Bill, Other, Subscriber
+from ..web.routers.models.post import FillSubscriber, PostCharge, PostFilledBill
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -279,21 +279,22 @@ def _ensure_zero(value: str) -> decimal.Decimal:
     return amount
 
 
-def format_csv(data: str) -> Bill:
+def format_csv(data: str) -> PostFilledBill:
     # Removing special characters
     data = data.replace("$", "")
 
-    bill: Bill
     header = ""
 
-    taxes = decimal.Decimal(0)
-    service = decimal.Decimal(0)
+    taxes = decimal.Decimal("0")
+    service = decimal.Decimal("0")
 
     for text in data.splitlines():
         if text.startswith("Billing Period Ending"):
-            bill = Bill(date=arrow.get(text, "MMMM YYYY").replace(day=1).date())
-            continue
+            break
 
+    bill = PostFilledBill(date=arrow.get(text, "MMMM YYYY").replace(day=1).shift(months=+1).date())
+
+    for text in data.splitlines():
         if text.startswith("Subscriber"):
             header = text
             continue
@@ -310,10 +311,10 @@ def format_csv(data: str) -> Bill:
                 continue
 
             bill.subscribers.append(
-                Subscriber.model_validate(
+                FillSubscriber.model_validate(
                     {
                         "name": name,
-                        "num": number,
+                        "number": number,
                         "minutes": reader["Talk Minutes"],
                         "messages": reader["Text Messages"],
                         "data": reader["Data "],
@@ -334,9 +335,33 @@ def format_csv(data: str) -> Bill:
             ):
                 _ensure_zero(reader[key])
 
-    bill.other.append(Other(kind="taxes", value=taxes, split=True))
+    bill.charges.append(PostCharge(name="taxes", split=True, total=taxes))
 
     for subscriber in bill.subscribers:
         subscriber.line = service / len(bill.subscribers)
+
+    bill.total = sum(
+        (
+            *(charge.total for charge in bill.charges),
+            *(sub.phone + sub.line + sub.insurance + sub.usage for sub in bill.subscribers),
+        ),
+        start=decimal.Decimal(),
+    )
+
+    # TODO: Replace this (and other little hacky fixes) with a plugin system
+    for key, numbers in config.load.swap.items():
+        storage = {}
+
+        for old, new in numbers.items():
+            for subscriber in bill.subscribers:
+                if subscriber.number == old:
+                    storage[new] = getattr(subscriber, key)
+
+                if subscriber.number == new:
+                    storage[old] = getattr(subscriber, key)
+
+        for subscriber in bill.subscribers:
+            if subscriber.number in storage:
+                setattr(subscriber, key, storage[subscriber.number])
 
     return bill

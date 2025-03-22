@@ -38,6 +38,9 @@ class BillScalar(SQLModel):
     date: datetime.date = Field(unique=True)
     total: JsonDecimal = decimal_field()
 
+    def update_total(self) -> None:
+        self.total = sum([item.total for item in self.details + self.charges], start=decimal.Decimal("0"))  # type: ignore[attr-defined]
+
 
 class DetailScalar(SQLModel):
     phone: typing.Annotated[JsonDecimal, "$"] = decimal_field()
@@ -49,7 +52,7 @@ class DetailScalar(SQLModel):
 
     minutes: typing.Annotated[int, "#"] = Field(default=0)
     messages: typing.Annotated[int, "#"] = Field(default=0)
-    data: typing.Annotated[JsonDecimal, "#"] = decimal_field(decimal_places=3)
+    data: typing.Annotated[JsonDecimal, "#"] = decimal_field(decimal_places=4)
 
 
 class ChargeScalar(SQLModel):
