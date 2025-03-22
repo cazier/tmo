@@ -348,4 +348,20 @@ def format_csv(data: str) -> PostFilledBill:
         start=decimal.Decimal(),
     )
 
+    # TODO: Replace this (and other little hacky fixes) with a plugin system
+    for key, numbers in config.load.swap.items():
+        storage = {}
+
+        for old, new in numbers.items():
+            for subscriber in bill.subscribers:
+                if subscriber.number == old:
+                    storage[new] = getattr(subscriber, key)
+
+                if subscriber.number == new:
+                    storage[old] = getattr(subscriber, key)
+
+        for subscriber in bill.subscribers:
+            if subscriber.number in storage:
+                setattr(subscriber, key, storage[subscriber.number])
+
     return bill

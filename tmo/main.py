@@ -98,7 +98,7 @@ def fetch(
         os.environ[f"TMO_FETCH_{key}"] = getattr(config.fetch, key)
 
     if verbose:
-        logging.getLogger("tmo.lib.fetch").setLevel(logging.DEBUG)
+        logging.getLogger("tmo.loaders.fetch").setLevel(logging.DEBUG)
 
     if date:
         _date = arrow.get(date)
@@ -110,9 +110,9 @@ def fetch(
     csv = asyncio.run(fetcher.get_csv(date=_date))
 
     data = format_csv(csv)
-    api(data=data)
 
-    raise typer.Exit(0)
+    if not api(data=data):
+        raise typer.Exit(1)
 
 
 @update.command("bulk", help="Update the database in bulk with a JSON file")

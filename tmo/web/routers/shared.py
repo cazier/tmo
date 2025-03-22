@@ -1,14 +1,16 @@
 # mypy: disable-error-code="return-value"
+import fastapi
 from sqlmodel import select
 
 from ...db.models import Bill, Charge, Detail, Subscriber
 from ..dependencies import SessionDependency
-from . import api
 from .models.get import ReadBill
 from .models.post import PostFilledBill
 
+router = fastapi.APIRouter()
 
-@api.post("/fill")
+
+@router.post("/fill")
 async def post_filled_bill(*, data: PostFilledBill, session: SessionDependency) -> ReadBill:
     with session.begin_nested() as transaction:
         with session.begin_nested() as bill_transaction:

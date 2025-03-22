@@ -55,6 +55,7 @@ class Postgres(_Databases):
 class Load(BaseModel, validate_assignment=True):
     numbers: dict[str, str] = Field(default_factory=dict)
     names: dict[typing.Literal["default"] | str, str] = Field(default_factory=dict)
+    swap: dict[str, dict[str, str]] = Field(default_factory=dict)
 
     @field_validator("names", mode="before")
     @classmethod
