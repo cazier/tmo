@@ -105,12 +105,20 @@ class BillsRender(BaseModel):
 
             for dependent in config.frontend.dependents[subscriber.number]:
                 try:
-                    owed[self._split(subscriber.name)] += self._lookup_subscriber(number=dependent).details.total
+                    owed[self._split(subscriber.name)] += (
+                        self._lookup_subscriber(number=dependent).details.total + self.split_charges
+                    )
 
                 except LookupError:
                     continue
 
         return owed
+
+    @property
+    def split_charges(self) -> decimal.Decimal:
+        return sum((charge.total for charge in self.current.charges if charge.split), start=decimal.Decimal()) / len(
+            self.current.subscribers
+        )
 
     @property
     def charges(self) -> list[_Shared]:
