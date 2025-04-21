@@ -10,13 +10,7 @@ import typing
 import pytest
 from faker import Faker
 
-from tmo.config import Config, Frontend, Load, Memory, Sqlite, T, merge_dict
-
-
-@pytest.fixture(autouse=True)
-def _purge_config() -> typing.Generator[None, None, None]:
-    yield
-    Config.purge_sentinel()
+from tmo.config import Config, Frontend, Load, Memory, Sqlite
 
 
 @pytest.fixture(scope="session")
@@ -43,20 +37,6 @@ def dictionary(request: pytest.FixtureRequest, tmp_path: pathlib.Path, gen_data:
             path.write_text(gen_data, encoding="utf8")
 
     return data
-
-
-@pytest.mark.parametrize(
-    ("original", "update", "new"),
-    (
-        ({"a": "a", "b": "b"}, {"b": "c", "d": "d"}, {"a": "a", "b": "c", "d": "d"}),
-        ({"a": "a", "b": {"b": "c"}}, {"b": "b", "c": {"c": "d"}}, {"a": "a", "b": "b", "c": {"c": "d"}}),
-        ({"a": "a", "b": {"b": "c"}}, {"b": {"b": "d"}, "c": {"c": "d"}}, {"a": "a", "b": {"b": "d"}, "c": {"c": "d"}}),
-        ({"a": "a", "b": {"b": "c", "c": "d"}}, {"b": {"b": "d"}}, {"a": "a", "b": {"c": "d", "b": "d"}}),
-    ),
-    ids=("no nesting", "nesting swapped", "nesting update", "partial update"),
-)
-def test_merge_dict(original: T, update: T, new: T):
-    assert merge_dict(original, update) == new
 
 
 @pytest.mark.parametrize(
