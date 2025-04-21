@@ -4,13 +4,13 @@ import os
 import fastapi
 from starlette.exceptions import HTTPException
 
-from .. import Config, config
+from .. import config
 from .exceptions import APIException
 from .frontend import static, templates
 from .frontend.pages import frontend
 from .routers import api
 
-Config.from_file(os.environ["TMO_UVICORN_CONFIG_PATH"])
+config.from_file(os.environ["TMO_UVICORN_CONFIG_PATH"])
 
 app = fastapi.FastAPI(debug=config.api.debug)
 app.include_router(api)

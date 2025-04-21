@@ -120,11 +120,11 @@ def bulk(
     path: Annotated[pathlib.Path, typer.Option(help="path to json file")],
     config_file: Annotated[Optional[pathlib.Path], typer.Option("--config", help="path to a config file")] = None,
 ) -> None:
-    from . import Config
+    from . import config
     from .loaders.bulk import write_db
 
     if config_file:
-        Config.from_file(config_file)
+        config.from_file(config_file)
 
     write_db(path)
 

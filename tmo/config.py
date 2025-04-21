@@ -3,26 +3,10 @@ import ipaddress
 import pathlib
 import typing
 
-from pydantic import BaseModel, Field, IPvAnyAddress, field_validator, model_validator
+from pydantic import BaseModel, Field, IPvAnyAddress, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from .lib.sentinel import Sentinel
-
 T = dict[str, "T"]
-
-
-def merge_dict(original: T, update: T) -> T:
-    def _recurse(combined: T, new: T) -> None:
-        for key, value in new.items():
-            if isinstance(value, dict):
-                _recurse(combined=combined.setdefault(key, {}), new=value)
-            else:
-                combined[key] = value
-
-    result: T = {}
-    _recurse(result, original)
-    _recurse(result, update)
-    return result
 
 
 class _Databases(BaseModel, validate_assignment=True):
@@ -104,29 +88,23 @@ class Fetch(BaseModel, validate_assignment=True):
     totp_secret: str = ""
 
 
-class Config(Sentinel, BaseSettings):
+class Config(BaseSettings):
     model_config = SettingsConfigDict(env_nested_delimiter="__", env_prefix="TMO_")
 
-    database: Memory | Sqlite | Postgres = Field(default=Memory(), discriminator="dialect")
+    database: Memory | Sqlite | Postgres = Field(default_factory=Memory)
     load: Load = Field(default_factory=Load)
     frontend: Frontend = Field(default_factory=Frontend)
     api: Api = Field(default_factory=Api)
     fetch: Fetch | None = None
 
-    @model_validator(mode="before")
-    @classmethod
-    def _database(cls, data: T | typing.Any) -> T:
-        # TODO, this continues to get squirrely...
-        if not data:
-            data = {"database": {"dialect": "memory"}}
+    def __set(self, new: dict[str, typing.Any]) -> None:
+        model = self.model_validate(new)
 
-        if data["database"].get("dialect") != "postgres" and data["database"].get("path") is not None:
-            data["database"]["dialect"] = "sqlite"  # type: ignore[assignment]
-
-        return data
+        for name in type(self).model_fields:
+            setattr(self, name, getattr(model, name))
 
     @classmethod
-    def from_file(cls, path: pathlib.Path | str) -> typing.Self:
+    def from_file(cls, path: pathlib.Path | str) -> "Config":
         if isinstance(path, str):
             path = pathlib.Path(path).resolve()
 
@@ -144,19 +122,17 @@ class Config(Sentinel, BaseSettings):
             case _:
                 raise TypeError("Could not automatically determine the input file type")
 
-        with cls.update_sentinel():
-            return cls.model_validate(parse(path.read_text(encoding="utf8")))
+        config.__set(parse(path.read_text(encoding="utf8")))
+        return config
 
     @contextlib.contextmanager
     def patch(self, **patches: dict[str, typing.Any]) -> typing.Generator[None, None, None]:
-        original = self.model_dump(mode="json")
-        with self.update_sentinel():
-            self.model_validate(merge_dict(original, patches))
+        original = self.model_dump()
+        self.__set(self.model_copy(update=patches, deep=True).model_dump(warnings="none"))
 
         yield
 
-        with self.update_sentinel():
-            self.model_validate(original, strict=True)
+        self.__set(original)
 
 
 config = Config()
