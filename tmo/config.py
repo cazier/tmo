@@ -97,6 +97,12 @@ class Config(BaseSettings):
     api: Api = Field(default_factory=Api)
     fetch: Fetch | None = None
 
+    def __set(self, new: dict[str, typing.Any]) -> None:
+        model = self.model_validate(new)
+
+        for name in type(self).model_fields:
+            setattr(self, name, getattr(model, name))
+
     @classmethod
     def from_file(cls, path: pathlib.Path | str) -> "Config":
         if isinstance(path, str):
@@ -118,12 +124,6 @@ class Config(BaseSettings):
 
         config.__set(parse(path.read_text(encoding="utf8")))
         return config
-
-    def __set(self, new: dict[str, typing.Any]) -> None:
-        model = self.model_validate(new)
-
-        for name in type(self).model_fields:
-            setattr(self, name, getattr(model, name))
 
     @contextlib.contextmanager
     def patch(self, **patches: dict[str, typing.Any]) -> typing.Generator[None, None, None]:
