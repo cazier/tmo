@@ -12,6 +12,11 @@ from .filters import BillsRender
 frontend = APIRouter(include_in_schema=False)
 
 
+@frontend.head("/")
+async def head_index() -> dict[str, str]:
+    return {"status": "ok"}
+
+
 @frontend.get("/bill")
 @frontend.get("/bill/{year}/{month}")
 async def get_bill_pair(
