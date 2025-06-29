@@ -141,7 +141,7 @@ class Fetcher:
         logger.info("Configuration includes a two-factor authentication method")
         await playwright.expect(
             self.page.get_by_role("heading", name="Let's confirm it's you", exact=True)
-        ).to_be_visible()
+        ).to_be_visible(timeout=15000)
 
         logger.debug("Redirected to the two-factor authentication page")
         box = await self.page.get_by_role("radio", name="Use Google Authenticator", exact=True).bounding_box()

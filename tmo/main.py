@@ -83,12 +83,24 @@ def fetch(
     import asyncio
     import os
 
+    import httpx
+
     from . import config
     from .loaders.bulk import api
     from .loaders.fetch import Fetcher, format_csv
 
     if config_file:
         config.from_file(config_file)
+
+    with httpx.Client() as client:
+        try:
+            ok = client.head("http://127.0.0.1:8000").is_success
+        except httpx.ConnectError:
+            ok = False
+
+        if not ok:
+            typer.echo("Ensure the webserver is already running", err=True)
+            raise typer.Exit(1)
 
     if not config.fetch:
         typer.echo("Cannot fetch without an entry in the config file", err=True)
